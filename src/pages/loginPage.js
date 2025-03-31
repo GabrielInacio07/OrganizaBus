@@ -5,6 +5,7 @@ import Input from '@/components/input'
 import Button from '@/components/button'
 import { verificaUsuario } from '@/model/user'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
     const [formData, setFormData] = useState({
@@ -12,6 +13,9 @@ export default function LoginPage() {
         password: ''
     })
     const [error, setError] = useState('')
+    const [showCreateAccount, setShowCreateAccount] = useState(false) // Novo estado para controlar a sugestão
+    const router = useRouter()
+
     const handleFormEdit = (event, name) => {
         event.preventDefault()
         setFormData({
@@ -19,26 +23,43 @@ export default function LoginPage() {
             [name]: event.target.value
         })
     }
+
     const handleSubmit = async (event) => {
         event.preventDefault()
         setError('')
-        try{
+        setShowCreateAccount(false)
+        try {
             const user = await verificaUsuario.buscaPorEmail(formData.email)
+            
             if(!user){
-                throw new Error('Usuário não encontrado')
+                setShowCreateAccount(true) 
+                throw new Error('Usuário não encontrado. Deseja criar uma conta?')
             }
+            
             if(user.senha !== formData.password){
                 throw new Error('Senha incorreta')
             }
+            
             alert('Login realizado com sucesso')
-        }catch{
+            router.push('/') 
+        } catch (error) {
             setError(error.message)
         }
     }
+
     return (
         <div className={styles.background}>
             <LoginCard title={'Entre em sua Conta'}>
-                {error && <p className={styles.error}>{error}</p>}
+                {error && (
+                    <div className={styles.errorContainer}>
+                        <p className={styles.error}>{error}</p>
+                        {showCreateAccount && (
+                            <Link href="/cadastroPage" className={styles.createAccountLink}>
+                                <Button type="button">Criar conta agora</Button>
+                            </Link>
+                        )}
+                    </div>
+                )}
                 <form className={styles.form} onSubmit={handleSubmit}>
                     <Input 
                         type="email" 
@@ -55,7 +76,7 @@ export default function LoginPage() {
                         onChange={(e) => handleFormEdit(e, 'password')} 
                     />
                     <Button type="submit">Entrar</Button>
-                    <Link href="/cadastroPage">Ainda não possui conta?</Link>
+                    <Link href="/cadastroPage" className={styles.link}>Ainda não possui conta?</Link>
                 </form>
             </LoginCard>
         </div>
