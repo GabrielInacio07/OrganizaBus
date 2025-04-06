@@ -3,10 +3,10 @@ import styles from '../styles/Login.module.css'
 import LoginCard from "@/components/loginCard"
 import Input from '@/components/input'
 import Button from '@/components/button'
-import { verificaUsuario } from '@/model/user'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
+import { verificaUsuario } from '@/model/user'
+import { UserService } from '@/services/user.service'
 export default function LoginPage() {
     const [formData, setFormData] = useState({
         email: '',
@@ -29,7 +29,7 @@ export default function LoginPage() {
         setError('')
         setShowCreateAccount(false)
         try {
-            const user = await verificaUsuario.buscaPorEmail(formData.email)
+            const user = await UserService.buscarPorEmail(formData.email)
             
             if(!user){
                 setShowCreateAccount(true) 
@@ -53,11 +53,6 @@ export default function LoginPage() {
                 {error && (
                     <div className={styles.errorContainer}>
                         <p className={styles.error}>{error}</p>
-                        {showCreateAccount && (
-                            <Link href="/cadastroPage" className={styles.createAccountLink}>
-                                <Button type="button">Criar conta agora</Button>
-                            </Link>
-                        )}
                     </div>
                 )}
                 <form className={styles.form} onSubmit={handleSubmit}>

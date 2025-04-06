@@ -6,6 +6,7 @@ import LoginCard from "@/components/loginCard"
 import Input from '@/components/input'
 import Button from '@/components/button'
 import { verificaUsuario } from '@/model/user'
+import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
     const [formData, setFormData] = useState({
@@ -102,7 +103,7 @@ export default function CadastroPage() {
         }
 
         try {
-            await verificaUsuario.registro(
+            await UserService.registrar(
                 formData.name, 
                 formData.email, 
                 formData.telefone.replace(/\D/g, ''),
