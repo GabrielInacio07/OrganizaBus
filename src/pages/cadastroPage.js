@@ -2,10 +2,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation' 
 import styles from '../styles/Login.module.css'
-import LoginCard from "@/components/loginCard"
-import Input from '@/components/input'
-import Button from '@/components/button'
-import { verificaUsuario } from '@/model/user'
+import LoginCard from "@/components/LoginCard"
+import Input from '@/components/Input'
+import Button from '@/components/Button'
 import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
@@ -111,7 +110,7 @@ export default function CadastroPage() {
                 formData.password
             )
             alert('Usuário cadastrado com sucesso')
-            router.push('/loginPage') 
+            router.push('/LoginPage') 
         } catch (error) {
             setError(error.message)
         }
@@ -162,7 +161,7 @@ export default function CadastroPage() {
                         onChange={(e) => handleFormEdit(e, 'password')} 
                     />
                     <Button type="submit">Cadastrar</Button>
-                    <Link href="/loginPage">Já possui conta?</Link>
+                    <Link href="/LoginPage">Já possui conta?</Link>
                 </form>
             </LoginCard>
         </div>
