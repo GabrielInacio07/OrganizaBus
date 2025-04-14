@@ -10,9 +10,14 @@
   },
   "dependencies": {
     "cookies-next": "^5.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "framer-motion": "^12.7.2",
+    "install": "^0.13.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-type-animation": "^3.2.0",
+    "styled-components": "^6.1.17",
+    "swiper": "^11.2.6"
   }
 }
