@@ -1,10 +1,16 @@
+// Importaçoes do react
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation' 
-import styles from '../styles/Login.module.css'
-import LoginCard from "@/components/LoginCard"
-import Input from '@/components/Input'
-import Button from '@/components/Button'
+
+// Importação de estilos
+import styles from '../../styles/components/cadastroCard.module.css'
+
+// Importação de componentes
+import LoginCard from "@/components/loginCard"
+import Input from '@/components/input'
+import Button from '@/components/button'
+
+//Importação Service
 import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
@@ -20,7 +26,6 @@ export default function CadastroPage() {
         telefone: '',
         cpf: ''
     })
-    const router = useRouter()
 
     const formatarTelefone = (value) => {
         // Remove tudo que não é dígito
@@ -110,7 +115,8 @@ export default function CadastroPage() {
                 formData.password
             )
             alert('Usuário cadastrado com sucesso')
-            router.push('/LoginPage') 
+            window.location.href = '/login'
+
         } catch (error) {
             setError(error.message)
         }
@@ -161,7 +167,7 @@ export default function CadastroPage() {
                         onChange={(e) => handleFormEdit(e, 'password')} 
                     />
                     <Button type="submit">Cadastrar</Button>
-                    <Link href="/LoginPage">Já possui conta?</Link>
+                    <Link href="/login">Já possui conta?</Link>
                 </form>
             </LoginCard>
         </div>

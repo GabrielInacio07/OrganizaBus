@@ -1,0 +1,16 @@
+.sliderWrapper {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .swiper {
+    height: 100%;
+  }
+  
+  .slide {
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.5);
+  }

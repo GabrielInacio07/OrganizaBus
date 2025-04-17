@@ -9,10 +9,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@tailwindcss/postcss": "^4.1.4",
     "cookies-next": "^5.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "framer-motion": "^12.7.2",
+    "install": "^0.13.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.2.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-type-animation": "^3.2.0",
+    "styled-components": "^6.1.17",
+    "swiper": "^11.2.6"
+  },
+  "devDependencies": {
+    "@unocss/preset-wind3": "^66.1.0-beta.11",
+    "@unocss/webpack": "^66.1.0-beta.11",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.4",
+    "unocss": "^66.1.0-beta.11",
+    "vite-plugin-windicss": "^1.9.4",
+    "windicss": "^3.5.6"
   }
 }
