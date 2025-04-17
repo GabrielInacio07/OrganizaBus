@@ -1,4 +1,4 @@
-import styles from '../styles/loginCard.module.css';
+import styles from '../styles/components/loginCard.module.css';
 
 export default function LoginCard({ title,children }) {
     return (
