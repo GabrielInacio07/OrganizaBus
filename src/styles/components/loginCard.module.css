@@ -2,7 +2,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100dvh; /* usa unidade moderna para melhor suporte mobile */
+  height: 100dvh; 
   background-color: #121212;
 }
 
@@ -14,13 +14,13 @@
 
 .form {
   background-color: #1e1e1e;
-  padding: 3rem; /* mais espaço interno */
+  padding: 3rem; 
   border-radius: 2rem;
-  width: clamp(320px, 40vw, 480px); /* largura ajustável com mínimo e máximo */
+  width: clamp(320px, 40vw, 480px); 
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); /* sombra mais intensa */
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   transition: width 0.3s ease;
 }
@@ -39,7 +39,7 @@
   padding: 0.5rem 1rem;
   margin-bottom: 1rem;
   width: 100%;
-  height: 48px; /* aumentei a altura do campo */
+  height: 48px;
   box-shadow: inset 0px 0px 15px #000000;
 }
 

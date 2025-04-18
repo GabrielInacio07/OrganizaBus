@@ -1,16 +1,8 @@
-// Importaçoes do react
 import { useState } from 'react'
 import Link from 'next/link'
-
-// Importação de estilos
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser, faEnvelope, faPhone, faIdCard, faLock, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import styles from '../../styles/components/cadastroCard.module.css'
-
-// Importação de componentes
-import LoginCard from "@/components/loginCard"
-import Input from '@/components/input'
-import Button from '@/components/button'
-
-//Importação Service
 import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
@@ -28,10 +20,7 @@ export default function CadastroPage() {
     })
 
     const formatarTelefone = (value) => {
-        // Remove tudo que não é dígito
         const nums = value.replace(/\D/g, '')
-        
-        // Aplica máscara: (00) 00000-0000
         if (nums.length <= 10) {
             return nums
                 .replace(/(\d{2})(\d)/, '($1) $2')
@@ -44,10 +33,7 @@ export default function CadastroPage() {
     }
 
     const formatarCPF = (value) => {
-        // Remove tudo que não é dígito
         const nums = value.replace(/\D/g, '')
-        
-        // Aplica máscara: 000.000.000-00
         return nums
             .replace(/(\d{3})(\d)/, '$1.$2')
             .replace(/(\d{3})(\d)/, '$1.$2')
@@ -55,13 +41,11 @@ export default function CadastroPage() {
     }
 
     const validarTelefone = (telefone) => {
-        // Remove não dígitos e verifica se tem pelo menos 10 dígitos (DDD + número)
         const nums = telefone.replace(/\D/g, '')
         return nums.length >= 10
     }
 
     const validarCPF = (cpf) => {
-        // Remove não dígitos e verifica se tem 11 dígitos
         const nums = cpf.replace(/\D/g, '')
         return nums.length === 11
     }
@@ -69,7 +53,6 @@ export default function CadastroPage() {
     const handleFormEdit = (event, name) => {
         const value = event.target.value
         
-        // Aplica formatação conforme o campo
         let formattedValue = value
         if (name === 'telefone') {
             formattedValue = formatarTelefone(value)
@@ -92,7 +75,6 @@ export default function CadastroPage() {
         event.preventDefault()
         setError('')
         
-        // Validações antes de enviar
         const errors = {}
         if (!validarTelefone(formData.telefone)) {
             errors.telefone = 'Telefone inválido (mínimo 10 dígitos)'
@@ -116,60 +98,101 @@ export default function CadastroPage() {
             )
             alert('Usuário cadastrado com sucesso')
             window.location.href = '/login'
-
         } catch (error) {
             setError(error.message)
         }
     }
 
     return (
-        <div className={styles.background}>
-            <LoginCard title={'Crie sua Conta'}>
-                {error && <p className={styles.error}>{error}</p>}
-                <form className={styles.form} onSubmit={handleSubmit}>
-                    <Input 
-                        type="text" 
-                        placeholder="Seu Nome" 
-                        required 
-                        value={formData.name} 
-                        onChange={(e) => handleFormEdit(e, 'name')} 
-                    />
-                    <Input 
-                        type="email" 
-                        placeholder="Seu e-mail" 
-                        required 
-                        value={formData.email} 
-                        onChange={(e) => handleFormEdit(e, 'email')} 
-                    />
-                    <Input 
-                        type="text" 
-                        placeholder="Seu Telefone " 
-                        required 
-                        value={formData.telefone} 
-                        onChange={(e) => handleFormEdit(e, 'telefone')}
-                        error={fieldErrors.telefone}
-                        maxLength={15}
-                    />
-                    <Input 
-                        type="text" 
-                        placeholder="Seu CPF " 
-                        required 
-                        value={formData.cpf} 
-                        onChange={(e) => handleFormEdit(e, 'cpf')}
-                        error={fieldErrors.cpf}
-                        maxLength={14}
-                    />
-                    <Input 
-                        type="password" 
-                        placeholder="Sua senha" 
-                        required 
-                        value={formData.password} 
-                        onChange={(e) => handleFormEdit(e, 'password')} 
-                    />
-                    <Button type="submit">Cadastrar</Button>
-                    <Link href="/login">Já possui conta?</Link>
-                </form>
-            </LoginCard>
+        <div className={styles.container}>
+            <div className={styles.background}>
+                <div className={styles.cardWrapper}>
+                    <div className={styles.voltarPagina}>
+                        <Link href={'/'}><FontAwesomeIcon icon={faArrowLeft}/> Voltar para a página inicial</Link>
+                    </div>
+                    <form className={styles.form} onSubmit={handleSubmit}>
+                        <div className={styles.loginCardTitle}>Crie sua Conta</div>
+
+                        {error && (
+                            <div className={styles.errorContainer}>
+                                <p className={styles.error}>{error}</p>
+                            </div>
+                        )}
+
+                        <div className={styles.field}>
+                            <FontAwesomeIcon icon={faUser} className={styles.inputIcon} />
+                            <input
+                                type="text"
+                                placeholder="Seu Nome"
+                                className={styles.inputField}
+                                required
+                                value={formData.name}
+                                onChange={(e) => handleFormEdit(e, 'name')}
+                            />
+                        </div>
+
+                        <div className={styles.field}>
+                            <FontAwesomeIcon icon={faEnvelope} className={styles.inputIcon} />
+                            <input
+                                type="email"
+                                placeholder="Seu e-mail"
+                                className={styles.inputField}
+                                required
+                                value={formData.email}
+                                onChange={(e) => handleFormEdit(e, 'email')}
+                            />
+                        </div>
+
+                        <div className={styles.field}>
+                            <FontAwesomeIcon icon={faPhone} className={styles.inputIcon} />
+                            <input
+                                type="text"
+                                placeholder="Seu Telefone"
+                                className={styles.inputField}
+                                required
+                                value={formData.telefone}
+                                onChange={(e) => handleFormEdit(e, 'telefone')}
+                                maxLength={15}
+                            />
+                        </div>
+                        {fieldErrors.telefone && <span className={styles.error}>{fieldErrors.telefone}</span>}
+
+                        <div className={styles.field}>
+                            <FontAwesomeIcon icon={faIdCard} className={styles.inputIcon} />
+                            <input
+                                type="text"
+                                placeholder="Seu CPF"
+                                className={styles.inputField}
+                                required
+                                value={formData.cpf}
+                                onChange={(e) => handleFormEdit(e, 'cpf')}
+                                maxLength={14}
+                            />
+                        </div>
+                        {fieldErrors.cpf && <span className={styles.error}>{fieldErrors.cpf}</span>}
+
+                        <div className={styles.field}>
+                            <FontAwesomeIcon icon={faLock} className={styles.inputIcon} />
+                            <input
+                                type="password"
+                                placeholder="Sua senha"
+                                className={styles.inputField}
+                                required
+                                value={formData.password}
+                                onChange={(e) => handleFormEdit(e, 'password')}
+                            />
+                        </div>
+
+                        <div className={styles.btn}>
+                            <button type="submit" className={styles.button1}>Cadastrar</button>
+                        </div>
+
+                        <Link href="/login" className={styles.link}>
+                            Já possui conta? Faça login
+                        </Link>
+                    </form>
+                </div>
+            </div>
         </div>
     )
 }
