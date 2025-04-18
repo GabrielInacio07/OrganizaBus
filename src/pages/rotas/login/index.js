@@ -38,14 +38,14 @@ export default function LoginPage() {
       }
 
       alert('Login realizado com sucesso')
-      window.location.href = '/rotas/motorista' // redireciona para a home
+      window.location.href = '/rotas/motorista' 
     } catch (error) {
       setError(error.message)
     }
   }
 
   const handleSignUp = () => {
-    window.location.href = '/rotas/cadastro' // redireciona para cadastro
+    window.location.href = '/rotas/cadastro' 
   }
 
   const handleLoginRedirect = () => {
