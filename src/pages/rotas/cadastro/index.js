@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faEnvelope, faPhone, faIdCard, faLock, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import styles from '../../styles/components/cadastroCard.module.css'
+import styles from '../../../styles/components/cadastroCard.module.css'
 import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
@@ -97,7 +97,7 @@ export default function CadastroPage() {
                 formData.password
             )
             alert('Usuário cadastrado com sucesso')
-            window.location.href = '/login'
+            window.location.href = '/rotas/login'
         } catch (error) {
             setError(error.message)
         }
@@ -187,7 +187,7 @@ export default function CadastroPage() {
                             <button type="submit" className={styles.button1}>Cadastrar</button>
                         </div>
 
-                        <Link href="/login" className={styles.link}>
+                        <Link href="/rotas/login" className={styles.link}>
                             Já possui conta? Faça login
                         </Link>
                     </form>

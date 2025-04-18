@@ -5,7 +5,7 @@ import styled from 'styled-components';
 const VamosComecar = () => {
     return (
       <StyledWrapper>
-        <button className="button" onClick={() => window.location.href = '/login'
+        <button className="button" onClick={() => window.location.href = '/rotas/login'
 }>   
           Vamos Começar
           <svg className="icon" viewBox="0 0 24 24" fill="currentColor">

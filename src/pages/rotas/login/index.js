@@ -1,4 +1,4 @@
-import styles from '../../styles/components/loginCard.module.css'
+import styles from '../../../styles/components/loginCard.module.css'
 import { useState } from 'react'
 import { UserService } from '@/services/user.service'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -38,16 +38,22 @@ export default function LoginPage() {
       }
 
       alert('Login realizado com sucesso')
-      window.location.href = '/' // redireciona para a home
+      window.location.href = '/rotas/motorista' // redireciona para a home
     } catch (error) {
       setError(error.message)
     }
   }
 
   const handleSignUp = () => {
-    window.location.href = '/cadastro' // redireciona para cadastro
+    window.location.href = '/rotas/cadastro' // redireciona para cadastro
   }
 
+  const handleLoginRedirect = () => {
+    const email = encodeURIComponent(formData.email)
+    const password = encodeURIComponent(formData.password)
+    window.location.href = `/rotas/motorista?email=${email}&password=${password}`
+  }
+  
   
   return (
     <div className={styles.container}>
