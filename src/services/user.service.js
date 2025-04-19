@@ -11,6 +11,19 @@ export class UserService {
     localStorage.setItem('users', JSON.stringify(users))
   }
 
+  static setCurrentUser(user) {
+    localStorage.setItem('currentUser', JSON.stringify(user))
+  }
+
+  static getCurrentUser() {
+    const user = localStorage.getItem('currentUser')
+    return user ? JSON.parse(user) : null
+  }
+
+  static logout() {
+    localStorage.removeItem('currentUser')
+  }
+
   static async registrar(nome, email, telefone, cpf, senha) {
     const users = this.getUsers()
     const usuarioExistente = users.some((user) => user.email === email || user.cpf === cpf)
@@ -32,7 +45,7 @@ export class UserService {
     }
 
     const novoAluno = new Aluno(nome, email, telefone, cpf, senha, faculdade)
-    novoAluno.id = Date.now() 
+    novoAluno.id = Date.now()
     users.push(novoAluno)
     this.setUsers(users)
     return novoAluno
@@ -45,29 +58,15 @@ export class UserService {
 
   static listarAlunos() {
     const users = this.getUsers()
-    return users.filter(user => user instanceof Aluno) 
-  }
-
-  static async editarAluno(id, alunoAtualizado) {
-    const users = this.getUsers()
-    const index = users.findIndex(user => user.id === id && user instanceof Aluno)
-    if (index === -1) {
-      throw new Error('Aluno não encontrado')
-    }
-   
-    users[index] = { ...users[index], ...alunoAtualizado }
-    this.setUsers(users)
-    return users[index]
-  }
-
-  static excluirAluno(id) {
-    let users = this.getUsers()
-    users = users.filter(user => !(user instanceof Aluno && user.id === id))
-    this.setUsers(users)
+    return users.filter(user => user.faculdade)
   }
 
   static verificarAluno(email, senha) {
     const users = this.getUsers()
-    return users.find(user => user instanceof Aluno && user.email === email && user.senha === senha)
+    return users.find(user => user.faculdade && user.email === email && user.senha === senha)
+  }
+  static verificarMotorista(email, senha) {
+    const users = this.getUsers();
+    return users.find(user => !user.faculdade && user.email === email && user.senha === senha);
   }
 }

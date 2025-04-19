@@ -5,6 +5,6 @@ export class User{
         this.telefone = telefone
         this.cpf = cpf
         this.senha = senha
-
+        this.tipo = 'motorista'
     }
 }

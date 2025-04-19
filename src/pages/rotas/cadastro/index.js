@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUser, faEnvelope, faPhone, faIdCard, faLock, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
-import styles from '../../../styles/components/cadastroCard.module.css'
+import { 
+  faUser, 
+  faEnvelope, 
+  faPhone, 
+  faIdCard, 
+  faLock, 
+  faArrowLeft,
+  faSun,
+  faMoon
+} from '@fortawesome/free-solid-svg-icons'
+import styles from '@/styles/components/cadastroCard.module.css'
 import { UserService } from '@/services/user.service'
 
 export default function CadastroPage() {
@@ -18,6 +27,7 @@ export default function CadastroPage() {
         telefone: '',
         cpf: ''
     })
+    const [isLightMode, setIsLightMode] = useState(false)
 
     const formatarTelefone = (value) => {
         const nums = value.replace(/\D/g, '')
@@ -103,9 +113,31 @@ export default function CadastroPage() {
         }
     }
 
+    const toggleTheme = () => {
+        setIsLightMode(!isLightMode)
+    }
+
     return (
-        <div className={styles.container}>
+        <div className={`${styles.container} ${isLightMode ? styles.lightMode : ''}`}>
             <div className={styles.background}>
+                <div className={styles.themeToggleContainer}>
+                    <label className={styles.switch}>
+                        <input 
+                            type="checkbox" 
+                            checked={isLightMode}
+                            onChange={toggleTheme}
+                        />
+                        <span className={`${styles.slider} ${styles.round}`}>
+                            <span className={styles.icon}>
+                                <FontAwesomeIcon 
+                                    icon={isLightMode ? faSun : faMoon} 
+                                    className={isLightMode ? styles.sunIcon : styles.moonIcon}
+                                />
+                            </span>
+                        </span>
+                    </label>
+                </div>
+
                 <div className={styles.cardWrapper}>
                     <div className={styles.voltarPagina}>
                         <Link href={'/'}><FontAwesomeIcon icon={faArrowLeft}/> Voltar para a página inicial</Link>

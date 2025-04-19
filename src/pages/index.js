@@ -7,8 +7,7 @@ import { useInView } from "framer-motion";
 
 //Components
 import Navbar from "@/components/Navbar";
-import HeroSlider from "@/components/HeroSlider";
-import HeroContent from "@/components/HeroContent";
+import HeroContent from "@/components/hero/HeroContent";
 import AboutSection from "@/components/secaoSobre";
 
 
@@ -20,7 +19,7 @@ export default function Home() {
     <div className={styles.container}>
       <Navbar />
       <div className={styles.sliderWrapper}>
-        <HeroSlider />
+       
         <HeroContent />
       </div>
      
