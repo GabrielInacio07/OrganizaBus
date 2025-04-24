@@ -17,6 +17,7 @@
     "framer-motion": "^12.7.2",
     "install": "^0.13.0",
     "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^1.5.16",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
