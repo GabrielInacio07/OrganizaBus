@@ -1,3 +1,4 @@
+'use client'
 import styles from '@/styles/components/loginCard.module.css';
 import { useState } from 'react';
 import { UserService } from '@/services/user.service';

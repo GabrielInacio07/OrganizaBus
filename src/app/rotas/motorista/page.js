@@ -1,6 +1,7 @@
+'use client'
 import { useState, useEffect } from 'react'
 import { UserService } from '@/services/user.service'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 export default function Motorista() {
   const router = useRouter()

@@ -1,3 +1,4 @@
+'use client'
 //Estilos
 import styles from "@/styles/Home.module.css";
 
