@@ -8,7 +8,7 @@ interface Product{
 }
 
 
-export default function CheckoutButton({title,price,quantity}:Product){
+export default function CheckoutAuxilio({title,price,quantity}:Product){
 
     const handlePayment = async () =>{
        
@@ -27,6 +27,6 @@ export default function CheckoutButton({title,price,quantity}:Product){
     }
 
     return(
-        <button className={styles.botao} onClick={handlePayment}>Pagar</button>
+        <button className={styles.botao} onClick={handlePayment}>Bolsa Estudantil</button>
     )
 }

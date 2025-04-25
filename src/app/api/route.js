@@ -18,7 +18,6 @@ export async function POST(req) {
                 failure: "http://localhost:3000/rotas/failure",
                 pending: "http://localhost:3000/rotas/pending",
             },
-            
         };
 
         console.log("Preference:", preference); // Adicionando log para a preferência
