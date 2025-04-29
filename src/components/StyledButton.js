@@ -1,11 +1,13 @@
+import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
-;
+
 
 
 const VamosComecar = () => {
+  const router = useRouter();
     return (
       <StyledWrapper>
-        <button className="button" onClick={() => window.location.href = '/rotas/login'
+        <button className="button" onClick={() => router.push('/rotas/login')
 }>   
           Vamos Começar
           <svg className="icon" viewBox="0 0 24 24" fill="currentColor">

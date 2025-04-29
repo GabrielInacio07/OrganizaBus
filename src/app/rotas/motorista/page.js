@@ -10,8 +10,7 @@ export default function Motorista() {
     email: '',
     telefone: '',
     cpf: '',
-    faculdade: '',
-    senha: ''
+    faculdade: ''
   })
   const [alunos, setAlunos] = useState([])
   const [motoristaLogado, setMotoristaLogado] = useState(false)
@@ -19,22 +18,19 @@ export default function Motorista() {
   useEffect(() => {
     const verificarLogin = () => {
       const user = UserService.getCurrentUser()
-
-      if (user && user.tipo === 'motorista'){
+      if (user && user.tipo === 'motorista') {
         setMotoristaLogado(true)
         carregarAlunos()
-      }else{
+      } else {
         alert('Você não está logado como motorista ou não tem permissão para acessar esta página.')
         router.push('/rotas/login')
       }
-    
     }
     verificarLogin()
   }, [])
 
   const carregarAlunos = () => {
     const alunosCadastrados = UserService.listarAlunos()
-    console.log('Alunos carregados:', alunosCadastrados) // Adicione este log para debug
     setAlunos(alunosCadastrados)
   }
 
@@ -47,35 +43,40 @@ export default function Motorista() {
     e.preventDefault()
     try {
       const currentUser = JSON.parse(localStorage.getItem('currentUser'))
-  
+
+      // Gerar senha aleatória
+      const senhaAleatoria = Math.random().toString(36).slice(-8)
+
       const novoAluno = await UserService.registrarAluno(
         formData.nome,
         formData.email,
         formData.telefone,
         formData.cpf,
-        formData.senha,
+        senhaAleatoria,
         formData.faculdade,
         currentUser.email 
       )
-  
+
       console.log('Novo aluno cadastrado:', novoAluno)
-      alert('Aluno cadastrado com sucesso')
-  
+
+      // Enviar email com a senha
+      await UserService.enviarSenhaPorEmail(formData.email, senhaAleatoria)
+
+      alert('Aluno cadastrado com sucesso e senha enviada por email.')
+
       setFormData({
         nome: '',
         email: '',
         telefone: '',
         cpf: '',
-        faculdade: '',
-        senha: ''
+        faculdade: ''
       })
-  
+
       carregarAlunos()
     } catch (error) {
       alert(error.message)
     }
   }
-  
 
   const handleLogout = () => {
     UserService.logout()
@@ -100,94 +101,31 @@ export default function Motorista() {
         <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
             <label htmlFor="nome">Nome</label>
-            <input
-              type="text"
-              id="nome"
-              name="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="text" id="nome" name="nome" value={formData.nome} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </div>
 
           <div>
             <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </div>
 
           <div>
             <label htmlFor="telefone">Telefone</label>
-            <input
-              type="tel"
-              id="telefone"
-              name="telefone"
-              value={formData.telefone}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="tel" id="telefone" name="telefone" value={formData.telefone} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </div>
 
           <div>
             <label htmlFor="cpf">CPF</label>
-            <input
-              type="text"
-              id="cpf"
-              name="cpf"
-              value={formData.cpf}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="text" id="cpf" name="cpf" value={formData.cpf} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </div>
 
           <div>
             <label htmlFor="faculdade">Faculdade</label>
-            <input
-              type="text"
-              id="faculdade"
-              name="faculdade"
-              value={formData.faculdade}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="senha">Senha</label>
-            <input
-              type="password"
-              id="senha"
-              name="senha"
-              value={formData.senha}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-            />
+            <input type="text" id="faculdade" name="faculdade" value={formData.faculdade} onChange={handleChange} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <button 
-              type="submit" 
-              style={{ 
-                padding: '10px 20px', 
-                background: '#4CAF50', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="submit" style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
               Cadastrar
             </button>
           </div>

@@ -11,8 +11,10 @@ import {
   faSun,
   faMoon
 } from '@fortawesome/free-solid-svg-icons';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [showCreateAccount, setShowCreateAccount] = useState(false);
@@ -32,14 +34,14 @@ export default function LoginPage() {
       if (motorista) {
         UserService.setCurrentUser(motorista)
         alert('Login como motorista realizado com sucesso');
-        window.location.href = '/rotas/motorista';
+        router.push('/rotas/motorista');
         return;
       }
       const aluno = await UserService.verificarAluno(formData.email, formData.password)
       if(aluno){
         UserService.setCurrentUser(aluno);
         alert('Login como aluno realizado com sucesso');
-        window.location.href = '/rotas/aluno';
+        router.push('/rotas/aluno');
         return;
       }
       setShowCreateAccount(true);
@@ -50,7 +52,7 @@ export default function LoginPage() {
   };
 
   const handleSignUp = () => {
-    window.location.href = '/rotas/cadastro';
+    router.push('/rotas/cadastro');
   };
 
   const toggleTheme = () => {

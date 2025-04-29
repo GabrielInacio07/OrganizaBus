@@ -1,5 +1,7 @@
+// src/components/CadastroForm.js
 'use client'
-import { useState } from 'react'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
@@ -16,8 +18,9 @@ import styles from '@/styles/components/cadastroCard.module.css'
 import { UserService } from '@/services/user.service'
 import { useRouter } from 'next/navigation'
 
-export default function CadastroPage() {
+export default function CadastroForm() {
     const router = useRouter()
+    const [isClient, setIsClient] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -31,6 +34,17 @@ export default function CadastroPage() {
         cpf: ''
     })
     const [isLightMode, setIsLightMode] = useState(false)
+
+    // This useEffect ensures we only render UI elements that might cause
+    // hydration mismatches after the component has mounted on the client
+    useEffect(() => {
+        // Check if there's a theme preference in localStorage
+        const savedTheme = localStorage.getItem('theme')
+        if (savedTheme) {
+            setIsLightMode(savedTheme === 'light')
+        }
+        setIsClient(true)
+    }, [])
 
     const formatarTelefone = (value) => {
         const nums = value.replace(/\D/g, '')
@@ -117,7 +131,15 @@ export default function CadastroPage() {
     }
 
     const toggleTheme = () => {
-        setIsLightMode(!isLightMode)
+        const newThemeValue = !isLightMode
+        setIsLightMode(newThemeValue)
+        // Save theme preference
+        localStorage.setItem('theme', newThemeValue ? 'light' : 'dark')
+    }
+
+    // Only render theme toggle after client-side hydration
+    if (!isClient) {
+        return <div className={styles.container}><div className={styles.loading}>Carregando...</div></div>
     }
 
     return (
