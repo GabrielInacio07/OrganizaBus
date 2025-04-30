@@ -1,4 +1,5 @@
 'use client'
+import { BotaoSair } from "@/components/botaoSair"
 import CheckoutAuxilio from "@/components/checkoutAuxilio"
 import CheckoutPagar from "@/components/checkoutPagar"
 import { UserService } from "@/services/user.service"
@@ -12,9 +13,7 @@ export default function Alunos() {
     return (
         <div>
             <h1>Alunos</h1>
-            <button onClick={handleLogout} style={{ padding: '8px 16px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px' }}>
-          Sair
-        </button>
+            <BotaoSair onClick={handleLogout} />
             <p>Essa página dos alunos.</p>
             <CheckoutAuxilio  title='Bolsa-Estudantil' price= {280} quantity={1} />
             <CheckoutPagar title='Pagamento do Aluno' price= {220} quantity={1}/>

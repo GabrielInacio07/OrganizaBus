@@ -38,6 +38,17 @@ export default function Motorista() {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
   }
+  const handleRemoverAluno= (id) =>{
+    if (confirm('Tem certeza que deseja remover este aluno?')) {
+      try {
+        UserService.removerAluno(id)
+        alert('Aluno removido com sucesso.')
+        carregarAlunos()
+      } catch (error) {
+        alert(error.message)
+      }
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -147,15 +158,31 @@ export default function Motorista() {
               </tr>
             </thead>
             <tbody>
-              {alunos.map((aluno) => (
-                <tr key={aluno.id || aluno.cpf} style={{ borderBottom: '1px solid #ddd' }}>
-                  <td style={{ padding: '12px' }}>{aluno.nome}</td>
-                  <td style={{ padding: '12px' }}>{aluno.email}</td>
-                  <td style={{ padding: '12px' }}>{aluno.faculdade}</td>
-                  <td style={{ padding: '12px' }}>{aluno.telefone}</td>
-                </tr>
-              ))}
-            </tbody>
+  {alunos.map((aluno) => (
+    <tr key={aluno.id || aluno.cpf} style={{ borderBottom: '1px solid #ddd' }}>
+      <td style={{ padding: '12px' }}>{aluno.nome}</td>
+      <td style={{ padding: '12px' }}>{aluno.email}</td>
+      <td style={{ padding: '12px' }}>{aluno.faculdade}</td>
+      <td style={{ padding: '12px' }}>{aluno.telefone}</td>
+      <td style={{ padding: '12px' }}>
+        <button
+          onClick={() => handleRemoverAluno(aluno.id)}
+          style={{
+            background: '#e53935',
+            color: 'white',
+            border: 'none',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Remover
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
           </table>
         )}
       </div>

@@ -10,7 +10,7 @@ export async function sendEmail({ to, subject, text }) {
   });
 
   await transporter.sendMail({
-    from: process.env.GMAIL_USER,
+    from: `"${fromName}"<${process.env.GMAIL_USER}>`,
     to,
     subject,
     text,

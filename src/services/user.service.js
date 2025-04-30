@@ -78,6 +78,19 @@ export class UserService {
     const users = this.getUsers();
     return users.find(user => !user.faculdade && user.email === email && user.senha === senha);
   }
+  static removerAluno(id) {
+    const users = this.getUsers();
+  
+    // Garante que apenas alunos (com propriedade faculdade) possam ser removidos
+    const aluno = users.find(user => user.id === id && user.faculdade);
+    if (!aluno) {
+      throw new Error('Aluno não encontrado ou não é um aluno válido');
+    }
+  
+    const novosUsuarios = users.filter(user => user.id !== id);
+    this.setUsers(novosUsuarios);
+  }
+  
 
   static async enviarSenhaPorEmail(email, senha) {
     try {
@@ -88,8 +101,19 @@ export class UserService {
         },
         body: JSON.stringify({
           to: email,
-          subject: 'Cadastro realizado com sucesso',
-          text: `Seja bem-vindo!\n\nSua senha é: ${senha}\n\nRecomendamos que altere sua senha após o primeiro acesso.`,
+          subject: 'Bem-vindo a OrganizaBus',
+          text:`Olá,
+
+Seu cadastro no OrganizaBus foi realizado com sucesso!
+
+Sua senha temporária é: ${senha}
+
+Por favor, acesse o sistema e altere sua senha no primeiro login.
+
+Atenciosamente,
+Equipe OrganizaBus
+https://organizabus.com.br`,
+        fromName: 'OrganizaBus',
         }),
       });
     } catch (error) {
