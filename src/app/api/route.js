@@ -4,7 +4,7 @@ mercadopago.configure({
     access_token: process.env.CHAVE,
 });
 
-console.log("Access Token:", process.env.CHAVE); 
+
 
 export async function POST(req) {
     try {
@@ -20,11 +20,7 @@ export async function POST(req) {
             },
         };
 
-        console.log("Preference:", preference); // Adicionando log para a preferência
-
         const response = await mercadopago.preferences.create(preference);
-
-        console.log("Response:", response); // Verificando a resposta
 
         return NextResponse.json({ id: response.body.id });
     } catch (error) {
