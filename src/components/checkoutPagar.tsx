@@ -12,7 +12,7 @@ export default function CheckoutPagar({title,price,quantity}:Product){
 
     const handlePayment = async () =>{
        
-        const response = await fetch('/api/',{
+        const response = await fetch('/api/mp',{
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({title,price,quantity})

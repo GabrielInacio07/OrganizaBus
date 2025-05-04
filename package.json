@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "mercadopago": "^1.5.16",
     "next": "15.2.4",
+    "nodemailer": "^6.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-type-animation": "^3.2.0",

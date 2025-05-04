@@ -11,6 +11,15 @@
   height: 100%;
   position: relative;
 }
+.togglePassword {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #888;
+  z-index: 1;
+}
 
 .form {
   background-color: #1e1e1e;
