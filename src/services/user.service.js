@@ -1,108 +1,35 @@
-import { User } from "../model/user";
-import { Aluno } from "../model/aluno";
+const base = '/api';
 
-export class UserService {
-  static getUsers() {
-    const users = localStorage.getItem('users');
-    return users ? JSON.parse(users) : [];
-  }
+export const UserService = {
+  // MOTORISTA
+  async registrar(nome, email, telefone, cpf, senha) {
+    const res = await fetch(`${base}/registrar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email, telefone, cpf, senha, tipo: 'motorista' }),
+    });
+    return res.json();
+  },
 
-  static setUsers(users) {
-    localStorage.setItem('users', JSON.stringify(users));
-  }
+  // ALUNO
+  async registrarAluno(nome, email, telefone, cpf, senha, faculdade) {
+    const res = await fetch(`${base}/registrarAluno`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, email, telefone, cpf, senha, faculdade, tipo: 'aluno' }),
+    });
+    return res.json();
+  },
 
-  static setCurrentUser(user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-  }
-
-  static getCurrentUser() {
-    const user = localStorage.getItem('currentUser');
-    return user ? JSON.parse(user) : null;
-  }
-
-  static logout() {
-    localStorage.removeItem('currentUser');
-  }
-
-  static async registrar(nome, email, telefone, cpf, senha) {
-    const users = this.getUsers();
-    const usuarioExistente = users.some((user) => user.email === email || user.cpf === cpf);
-    if (usuarioExistente) {
-      throw new Error('Usuário já existe');
-    }
-
-    const novoUsuario = new User(nome, email, telefone, cpf, senha);
-    users.push(novoUsuario);
-    this.setUsers(users);
-
-    // Envia email de boas-vindas (se possível)
-    await this.enviarSenhaPorEmail(email, senha);
-
-    return novoUsuario;
-  }
-
-  static async registrarAluno(nome, email, telefone, cpf, senha, faculdade) {
-    const users = this.getUsers();
-    const usuarioExistente = users.some((user) => user.email === email || user.cpf === cpf);
-    if (usuarioExistente) {
-      throw new Error('Usuário já existe');
-    }
-
-    const novoAluno = new Aluno(nome, email, telefone, cpf, senha, faculdade);
-    novoAluno.id = Date.now();
-    users.push(novoAluno);
-    this.setUsers(users);
-
-    // Envia email de boas-vindas (se possível)
-    await this.enviarSenhaPorEmail(email, senha);
-
-    return novoAluno;
-  }
-
-  static async buscarPorEmail(email) {
-    const users = this.getUsers();
-    return users.find(user => user.email === email);
-  }
-
-  static listarAlunos() {
-    const users = this.getUsers();
-    return users.filter(user => user.faculdade);
-  }
-
-  static verificarAluno(email, senha) {
-    const users = this.getUsers();
-    return users.find(user => user.faculdade && user.email === email && user.senha === senha);
-  }
-
-  static verificarMotorista(email, senha) {
-    const users = this.getUsers();
-    return users.find(user => !user.faculdade && user.email === email && user.senha === senha);
-  }
-  static removerAluno(id) {
-    const users = this.getUsers();
-  
-    // Garante que apenas alunos (com propriedade faculdade) possam ser removidos
-    const aluno = users.find(user => user.id === id && user.faculdade);
-    if (!aluno) {
-      throw new Error('Aluno não encontrado ou não é um aluno válido');
-    }
-  
-    const novosUsuarios = users.filter(user => user.id !== id);
-    this.setUsers(novosUsuarios);
-  }
-  
-
-  static async enviarSenhaPorEmail(email, senha) {
+  async enviarSenhaPorEmail(email, senha) {
     try {
       await fetch('/api/sendEmail', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
           subject: 'Bem-vindo a OrganizaBus',
-          text:`Olá,
+          text: `Olá,
 
 Seu cadastro no OrganizaBus foi realizado com sucesso!
 
@@ -111,14 +38,46 @@ Sua senha temporária é: ${senha}
 Por favor, acesse o sistema e altere sua senha no primeiro login.
 
 Atenciosamente,
-Equipe OrganizaBus
-https://organizabus.com.br`,
-        fromName: 'OrganizaBus',
+Equipe OrganizaBus`,
         }),
       });
     } catch (error) {
       console.error('Erro ao enviar email:', error);
     }
-  }
+  },
+
+  // LOGIN
+  async verificarUsuario(email, senha) {
+    try {
+      const res = await fetch(`${base}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
   
-}
+      if (!res.ok) return null;
+  
+      const data = await res.json();
+      return data.erro ? null : data;
+    } catch (e) {
+      console.error('Erro ao verificar usuário:', e);
+      return null;
+    }
+  },
+  
+  
+
+  // SESSION
+  setCurrentUser(user) {
+    localStorage.setItem('usuario', JSON.stringify(user));
+  },
+
+  getCurrentUser() {
+    const user = localStorage.getItem('usuario');
+    return user ? JSON.parse(user) : null;
+  },
+
+  logout() {
+    localStorage.removeItem('usuario');
+  },
+};

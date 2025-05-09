@@ -31,37 +31,33 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setShowCreateAccount(false);
+  
     try {
-      const motorista = await UserService.verificarMotorista(
-        formData.email,
-        formData.password
-      );
-
-      if (motorista) {
-        UserService.setCurrentUser(motorista);
+      const usuario = await UserService.verificarUsuario(formData.email, formData.password);
+  
+      if (!usuario) {
+        setShowCreateAccount(true);
+        setError("Usuário não encontrado ou senha incorreta. Deseja criar uma conta?");
+        return;
+      }
+  
+      UserService.setCurrentUser(usuario);
+  
+      if (usuario.tipo === 'MOTORISTA') {
         alert("Login como motorista realizado com sucesso");
         router.push("/rotas/motorista");
-        return;
-      }
-      const aluno = await UserService.verificarAluno(
-        formData.email,
-        formData.password
-      );
-      if (aluno) {
-        UserService.setCurrentUser(aluno);
+      } else if (usuario.tipo === 'ALUNO') {
         alert("Login como aluno realizado com sucesso");
         router.push("/rotas/aluno");
-        return;
+      } else {
+        setError("Tipo de usuário desconhecido.");
       }
-      setShowCreateAccount(true);
-      setError(
-        "Usuário não encontrado ou senha incorreta. Deseja criar uma conta?"
-      );
     } catch (error) {
-      setError(error.message);
+      console.error("Erro no login:", error);
+      setError("Erro ao realizar login.");
     }
   };
-
+  
   const handleSignUp = () => {
     router.push("/rotas/cadastro");
   };
