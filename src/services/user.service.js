@@ -54,21 +54,31 @@ Equipe OrganizaBus`,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
       });
-  
+
       if (!res.ok) return null;
-  
+
       const data = await res.json();
-      return data.erro ? null : data;
+      console.log("Dados recebidos do backend:", data);
+
+      if (data.erro) return null;
+
+      // Normaliza o tipo antes de retornar
+      if (data.tipo) {
+        data.tipo = data.tipo.toLowerCase();
+      }
+
+      return data;
     } catch (e) {
       console.error('Erro ao verificar usuário:', e);
       return null;
     }
   },
-  
-  
 
   // SESSION
   setCurrentUser(user) {
+    if (user?.tipo) {
+      user.tipo = user.tipo.toLowerCase(); // garante tipo minúsculo no localStorage
+    }
     localStorage.setItem('usuario', JSON.stringify(user));
   },
 
@@ -79,5 +89,19 @@ Equipe OrganizaBus`,
 
   logout() {
     localStorage.removeItem('usuario');
+  },
+
+  // Suporte para lista e remoção de alunos (exemplo fictício se ainda não implementado)
+  async listarAlunos() {
+    const res = await fetch('/api/alunos');
+    if (!res.ok) throw new Error('Erro ao buscar alunos');
+    return res.json();
+  },
+  
+
+  removerAluno(id) {
+    const alunos = this.listarAlunos();
+    const atualizados = alunos.filter((a) => a.id !== id);
+    localStorage.setItem('alunos', JSON.stringify(atualizados));
   },
 };

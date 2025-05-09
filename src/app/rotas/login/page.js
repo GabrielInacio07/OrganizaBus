@@ -40,10 +40,10 @@ export default function LoginPage() {
         setError("Usuário não encontrado ou senha incorreta. Deseja criar uma conta?");
         return;
       }
-  
+      console.log("Salvando no localStorage:", usuario);
       UserService.setCurrentUser(usuario);
   
-      if (usuario.tipo === 'MOTORISTA') {
+      if (usuario.tipo === 'motorista') {
         alert("Login como motorista realizado com sucesso");
         router.push("/rotas/motorista");
       } else if (usuario.tipo === 'ALUNO') {

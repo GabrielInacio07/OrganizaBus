@@ -12,7 +12,7 @@ export async function POST(req) {
       return new Response(JSON.stringify({ erro: 'Aluno já existe' }), { status: 400 });
     }
 
-    const novoAluno = await prisma.aluno.create({
+    const novoAluno = await prisma.usuario.create({
       data: { nome, email, telefone, cpf, senha, faculdade, tipo },
     });
 
