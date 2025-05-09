@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export async function POST(req) {
   const body = await req.json();
-  const { nome, email, telefone, cpf, senha, faculdade, tipo } = body;
+  const { nome, email, telefone, cpf, senha, faculdade, tipo, motoristaId } = body;
 
   try {
     const existente = await prisma.aluno.findUnique({ where: { email } });
@@ -13,7 +13,7 @@ export async function POST(req) {
     }
 
     const novoAluno = await prisma.aluno.create({
-      data: { nome, email, telefone, cpf, senha, faculdade, tipo },
+      data: { nome, email, telefone, cpf, senha, faculdade, tipo, motoristaId },
     });
 
     return new Response(JSON.stringify(novoAluno), { status: 201 });

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function Motorista() {
   const router = useRouter();
+  const [motorista, setMotorista] = useState(null);
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -18,6 +19,7 @@ export default function Motorista() {
   useEffect(() => {
     const verificarLogin = async () => {
       const user = UserService.getCurrentUser();
+      setMotorista(user);
       console.log("Usuário no localStorage:", user);
 
       if (user && user.tipo && user.tipo.toLowerCase() === "motorista") {
@@ -77,7 +79,7 @@ const handleRemoverAluno = async (id) => {
         formData.cpf,
         senhaAleatoria,
         formData.faculdade,
-        currentUser.email
+        motorista.id
       );
 
       console.log("Novo aluno cadastrado:", novoAluno);
@@ -119,7 +121,7 @@ const handleRemoverAluno = async (id) => {
           alignItems: "center",
         }}
       >
-        <h1>Página Motorista</h1>
+        <h1>Página Motorista {motorista?.nome}</h1>
         <button
           onClick={handleLogout}
           style={{

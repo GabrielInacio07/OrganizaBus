@@ -12,14 +12,15 @@ export const UserService = {
   },
 
   // ALUNO
-  async registrarAluno(nome, email, telefone, cpf, senha, faculdade) {
-    const res = await fetch(`${base}/registrarAluno`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, email, telefone, cpf, senha, faculdade, tipo: 'aluno' }),
-    });
-    return res.json();
-  },
+  async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId) {
+  const res = await fetch(`${base}/registrarAluno`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome, email, telefone, cpf, senha, faculdade, tipo: 'aluno', motoristaId }),
+  });
+  return res.json();
+}
+,
 
   async enviarSenhaPorEmail(email, senha) {
     try {
@@ -95,11 +96,13 @@ Equipe OrganizaBus`,
   },
 
   // Suporte para lista e remoção de alunos (exemplo fictício se ainda não implementado)
-  async listarAlunos() {
-    const res = await fetch('/api/alunos');
-    if (!res.ok) throw new Error('Erro ao buscar alunos');
-    return res.json();
-  },
+async listarAlunos() {
+  const user = this.getCurrentUser();
+  const res = await fetch(`/api/alunos?motoristaId=${user.id}`);
+  if (!res.ok) throw new Error('Erro ao buscar alunos');
+  return res.json();
+}
+,
   
 
  async removerAluno(id) {

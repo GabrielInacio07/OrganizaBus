@@ -19,6 +19,7 @@ model User {
   cpf       String @unique
   senha     String
   tipo      String
+  alunos   Aluno[]
 }
 
 model Aluno {
@@ -30,5 +31,7 @@ model Aluno {
   senha     String
   tipo      String
   faculdade String
+  motoristaId Int
+  motorista User @relation(fields:[motoristaId], references:[id])
 }
 
