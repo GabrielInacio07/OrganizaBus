@@ -48,31 +48,34 @@ Equipe OrganizaBus`,
 
   // LOGIN
   async verificarUsuario(email, senha) {
-    try {
-      const res = await fetch(`${base}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha }),
-      });
+  try {
+    const res = await fetch(`${base}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha }),
+    });
 
-      if (!res.ok) return null;
+    if (!res.ok) return null;
 
-      const data = await res.json();
-      console.log("Dados recebidos do backend:", data);
+    const data = await res.json();
+    console.log("Dados recebidos do backend:", data);
 
-      if (data.erro) return null;
+    if (data.erro) return null;
 
-      // Normaliza o tipo antes de retornar
-      if (data.tipo) {
-        data.tipo = data.tipo.toLowerCase();
-      }
-
-      return data;
-    } catch (e) {
-      console.error('Erro ao verificar usuário:', e);
-      return null;
+    // Corrigir tipo mesmo se não existir
+    if (!data.tipo) {
+      data.tipo = 'aluno'; // fallback se backend não mandou
+    } else {
+      data.tipo = data.tipo.toLowerCase();
     }
-  },
+
+    return data;
+  } catch (e) {
+    console.error('Erro ao verificar usuário:', e);
+    return null;
+  }
+},
+
 
   // SESSION
   setCurrentUser(user) {
@@ -99,9 +102,21 @@ Equipe OrganizaBus`,
   },
   
 
-  removerAluno(id) {
-    const alunos = this.listarAlunos();
-    const atualizados = alunos.filter((a) => a.id !== id);
-    localStorage.setItem('alunos', JSON.stringify(atualizados));
-  },
+ async removerAluno(id) {
+  const res = await fetch('/api/alunos', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.erro || 'Erro ao remover aluno');
+  }
+
+  return await res.json();
+}
+
 };

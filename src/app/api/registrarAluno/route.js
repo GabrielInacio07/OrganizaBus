@@ -12,12 +12,13 @@ export async function POST(req) {
       return new Response(JSON.stringify({ erro: 'Aluno já existe' }), { status: 400 });
     }
 
-    const novoAluno = await prisma.usuario.create({
+    const novoAluno = await prisma.aluno.create({
       data: { nome, email, telefone, cpf, senha, faculdade, tipo },
     });
 
     return new Response(JSON.stringify(novoAluno), { status: 201 });
   } catch (error) {
+    console.error("Erro ao registrar aluno:", error);
     return new Response(JSON.stringify({ erro: error.message }), { status: 500 });
   }
 }

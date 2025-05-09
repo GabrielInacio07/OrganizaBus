@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import  prisma  from '@/lib/prisma';
-
 export async function POST(request) {
   try {
     const { email, senha } = await request.json();
 
-    const usuario = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Primeiro tenta na tabela 'usuario' (motorista)
+    let usuario = await prisma.user.findUnique({ where: { email } });
+
+    // Se não encontrar, tenta na tabela 'aluno'
+    if (!usuario) {
+      usuario = await prisma.aluno.findUnique({ where: { email } });
+    }
 
     if (!usuario || usuario.senha !== senha) {
       return NextResponse.json({ erro: 'Email ou senha inválidos' }, { status: 401 });
@@ -19,10 +22,11 @@ export async function POST(request) {
       email: usuario.email,
       telefone: usuario.telefone,
       cpf: usuario.cpf,
-      tipo: usuario.tipo.toUpperCase(),
+      tipo: usuario.tipo?.toUpperCase() || 'ALUNO',
     });
   } catch (error) {
     console.error('Erro no login:', error);
     return NextResponse.json({ erro: 'Erro no servidor' }, { status: 500 });
   }
 }
+

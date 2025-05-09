@@ -46,7 +46,7 @@ export default function LoginPage() {
       if (usuario.tipo === 'motorista') {
         alert("Login como motorista realizado com sucesso");
         router.push("/rotas/motorista");
-      } else if (usuario.tipo === 'ALUNO') {
+      } else if (usuario.tipo === 'aluno') {
         alert("Login como aluno realizado com sucesso");
         router.push("/rotas/aluno");
       } else {
