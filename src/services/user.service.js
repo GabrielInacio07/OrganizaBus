@@ -105,7 +105,7 @@ async listarAlunos() {
 ,
   
 
- async removerAluno(id) {
+async removerAluno(id) {
   const res = await fetch('/api/alunos', {
     method: 'DELETE',
     headers: {
@@ -115,11 +115,21 @@ async listarAlunos() {
   });
 
   if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.erro || 'Erro ao remover aluno');
+    let mensagem = 'Erro ao remover aluno';
+    try {
+      const data = await res.json();
+      mensagem = data.erro || mensagem;
+    } catch {}
+    throw new Error(mensagem);
   }
 
-  return await res.json();
+  try {
+    return await res.json();
+  } catch {
+    return { ok: true }; // fallback seguro
+  }
 }
+
+
 
 };

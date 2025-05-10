@@ -14,3 +14,21 @@ export async function GET(req) {
 
   return new Response(JSON.stringify(alunos), { status: 200 });
 }
+export async function DELETE(request) {
+  try {
+    const { id } = await request.json();
+
+    if (!id) {
+      return new Response(JSON.stringify({ erro: 'ID do aluno não informado' }), { status: 400 });
+    }
+
+    await prisma.aluno.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return new Response(JSON.stringify({ ok: true }), { status: 200 }); 
+  } catch (error) {
+    console.error("Erro ao deletar aluno:", error);
+    return new Response(JSON.stringify({ erro: 'Erro ao deletar aluno' }), { status: 500 });
+  }
+}
