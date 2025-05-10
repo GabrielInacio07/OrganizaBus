@@ -33,5 +33,20 @@ model Aluno {
   faculdade String
   motoristaId Int
   motorista User @relation(fields:[motoristaId], references:[id])
+  pagamentos Pagamento[]
 }
 
+model Pagamento {
+  id  Int   @id @default(autoincrement())
+  titulo String
+  valor Float
+  quantidade Int
+  status String
+  qr_code String
+  qr_code_base64 String @db.LongText
+  codigo_pix String
+  pagamentoId String
+  criadoEm DateTime @default(now())
+  alunoId Int?
+  aluno Aluno? @relation(fields: [alunoId], references: [id])
+}

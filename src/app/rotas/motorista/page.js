@@ -50,19 +50,18 @@ export default function Motorista() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-const handleRemoverAluno = async (id) => {
-  if (confirm("Tem certeza que deseja remover este aluno?")) {
-    try {
-      await UserService.removerAluno(id);
-      alert("Aluno removido com sucesso.");
-      await carregarAlunos(); // garantir que seja recarregado após remoção
-    } catch (error) {
-      console.error("Erro ao remover aluno:", error);
-      alert("Erro ao remover aluno: " + error.message);
+  const handleRemoverAluno = async (id) => {
+    if (confirm("Tem certeza que deseja remover este aluno?")) {
+      try {
+        await UserService.removerAluno(id);
+        alert("Aluno removido com sucesso.");
+        await carregarAlunos(); // garantir que seja recarregado após remoção
+      } catch (error) {
+        console.error("Erro ao remover aluno:", error);
+        alert("Erro ao remover aluno: " + error.message);
+      }
     }
-  }
-};
-
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -280,6 +279,15 @@ const handleRemoverAluno = async (id) => {
                 >
                   Telefone
                 </th>
+                 <th
+                  style={{
+                    padding: "12px",
+                    textAlign: "left",
+                    borderBottom: "1px solid #ddd",
+                  }}
+                >
+                  Pix
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -292,6 +300,13 @@ const handleRemoverAluno = async (id) => {
                   <td style={{ padding: "12px" }}>{aluno.email}</td>
                   <td style={{ padding: "12px" }}>{aluno.faculdade}</td>
                   <td style={{ padding: "12px" }}>{aluno.telefone}</td>
+                  <td style={{ padding: "12px" }}>
+                    {aluno.pagamentos?.length > 0
+                      ? aluno.pagamentos.some((p) => p.status === "approved")
+                        ? "Pago"
+                        : "Pendente"
+                      : "Não gerado"}
+                  </td>
                   <td style={{ padding: "12px" }}>
                     <button
                       onClick={() => handleRemoverAluno(aluno.id)}

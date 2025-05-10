@@ -1,0 +1,13 @@
+-- CreateTable
+CREATE TABLE `Pagamento` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `alunoId` INTEGER NOT NULL,
+    `valor` DOUBLE NOT NULL,
+    `tipo` VARCHAR(191) NOT NULL,
+    `data` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Pagamento` ADD CONSTRAINT `Pagamento_alunoId_fkey` FOREIGN KEY (`alunoId`) REFERENCES `Aluno`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
