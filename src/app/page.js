@@ -10,7 +10,7 @@ import { useInView } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import HeroContent from "@/components/hero/HeroContent";
 import AboutSection from "@/components/secaoSobre";
-
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function Home() {
   const sobreRef = useRef(null);

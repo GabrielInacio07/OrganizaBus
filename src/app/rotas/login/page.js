@@ -14,6 +14,8 @@ import {
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [isLightMode, setIsLightMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleFormEdit = (event, name) => {
     setFormData({ ...formData, [name]: event.target.value });
@@ -31,24 +34,47 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setShowCreateAccount(false);
-  
+
     try {
-      const usuario = await UserService.verificarUsuario(formData.email, formData.password);
-  
+      const usuario = await UserService.verificarUsuario(
+        formData.email,
+        formData.password
+      );
+
       if (!usuario) {
         setShowCreateAccount(true);
-        setError("Usuário não encontrado ou senha incorreta. Deseja criar uma conta?");
+        setError(
+          "Usuário não encontrado ou senha incorreta. Deseja criar uma conta?"
+        );
         return;
       }
       console.log("Salvando no localStorage:", usuario);
       UserService.setCurrentUser(usuario);
-  
-      if (usuario.tipo === 'motorista') {
-        alert("Login como motorista realizado com sucesso");
-        router.push("/rotas/motorista");
-      } else if (usuario.tipo === 'aluno') {
-        alert("Login como aluno realizado com sucesso");
-        router.push("/rotas/aluno");
+
+      if (usuario.tipo === "motorista") {
+        const result = await Swal.fire({
+          title: "Login realizado com sucesso",
+          text: "Você será redirecionado para a página do motorista.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+
+        if (result.isConfirmed) {
+          setLoading(true);
+          router.push("/rotas/motorista");
+        }
+      } else if (usuario.tipo === "aluno") {
+        const result = await Swal.fire({
+          title: "Login realizado com sucesso",
+          text: "Você será redirecionado para a página do aluno.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+
+        if (result.isConfirmed) {
+          setLoading(true);
+          router.push("/rotas/aluno");
+        }
       } else {
         setError("Tipo de usuário desconhecido.");
       }
@@ -57,7 +83,7 @@ export default function LoginPage() {
       setError("Erro ao realizar login.");
     }
   };
-  
+
   const handleSignUp = () => {
     router.push("/rotas/cadastro");
   };
@@ -70,6 +96,7 @@ export default function LoginPage() {
     <div
       className={`${styles.container} ${isLightMode ? styles.lightMode : ""}`}
     >
+      {loading && <LoadingOverlay />}
       <div className={styles.background}>
         <div className={styles.themeToggleContainer}>
           <label className={styles.switch}>

@@ -26,6 +26,7 @@
     "react-dom": "^19.0.0",
     "react-type-animation": "^3.2.0",
     "styled-components": "^6.1.17",
+    "sweetalert2": "^11.21.0",
     "swiper": "^11.2.6",
     "uuid": "^11.1.0"
   },
