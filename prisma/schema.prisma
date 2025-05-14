@@ -23,18 +23,24 @@ model User {
 }
 
 model Aluno {
-  id        Int    @id @default(autoincrement())
-  nome      String
-  email     String @unique
-  telefone  String
-  cpf       String @unique
-  senha     String
-  tipo      String
-  faculdade String
-  motoristaId Int
-  motorista User @relation(fields:[motoristaId], references:[id])
-  pagamentos Pagamento[]
+  id              Int          @id @default(autoincrement())
+  nome            String
+  email           String       @unique
+  telefone        String
+  cpf             String       @unique
+  senha           String
+  tipo            String
+  faculdade       String
+  motoristaId     Int
+  motorista       User         @relation(fields: [motoristaId], references: [id])
+  pagamentos      Pagamento[]
+  
+  // NOVOS CAMPOS
+  statusPagamento String?      @default("não gerado")
+  codigoPix       String? 
+  imagemPix       String?      @db.LongText
 }
+
 
 model Pagamento {
   id  Int   @id @default(autoincrement())

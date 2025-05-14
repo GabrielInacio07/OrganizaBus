@@ -279,7 +279,7 @@ export default function Motorista() {
                 >
                   Telefone
                 </th>
-                 <th
+                <th
                   style={{
                     padding: "12px",
                     textAlign: "left",
@@ -301,12 +301,17 @@ export default function Motorista() {
                   <td style={{ padding: "12px" }}>{aluno.faculdade}</td>
                   <td style={{ padding: "12px" }}>{aluno.telefone}</td>
                   <td style={{ padding: "12px" }}>
-                    {aluno.pagamentos?.length > 0
-                      ? aluno.pagamentos.some((p) => p.status === "approved")
-                        ? "Pago"
-                        : "Pendente"
-                      : "Não gerado"}
+                    {aluno.pagamentos && aluno.pagamentos.length > 0 ? (
+                      aluno.pagamentos.some((p) => p.status === "approved") ? (
+                        "Pago"
+                      ) : (
+                        "Pendente"
+                      )
+                    ) : (
+                      "Não gerado"
+                    )}
                   </td>
+
                   <td style={{ padding: "12px" }}>
                     <button
                       onClick={() => handleRemoverAluno(aluno.id)}

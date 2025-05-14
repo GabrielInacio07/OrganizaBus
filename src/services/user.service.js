@@ -12,11 +12,21 @@ export const UserService = {
   },
 
   // ALUNO
-  async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId) {
+ async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId) {
   const res = await fetch(`${base}/registrarAluno`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nome, email, telefone, cpf, senha, faculdade, tipo: 'aluno', motoristaId }),
+    body: JSON.stringify({
+      nome,
+      email,
+      telefone,
+      cpf,
+      senha,
+      faculdade,
+      tipo: 'aluno',
+      motoristaId,
+      statusPagamento: 'não gerado' // <- garante que seja enviado
+    }),
   });
   return res.json();
 }
@@ -98,11 +108,16 @@ Equipe OrganizaBus`,
   // Suporte para lista e remoção de alunos (exemplo fictício se ainda não implementado)
 async listarAlunos() {
   const user = this.getCurrentUser();
+  if (!user?.id) throw new Error('Usuário não encontrado');
+
   const res = await fetch(`/api/alunos?motoristaId=${user.id}`);
-  if (!res.ok) throw new Error('Erro ao buscar alunos');
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({}));
+    throw new Error(erro?.erro || 'Erro ao buscar alunos');
+  }
   return res.json();
-}
-,
+},
+
   
 
 async removerAluno(id) {
