@@ -143,6 +143,21 @@ async removerAluno(id) {
   } catch {
     return { ok: true }; // fallback seguro
   }
+},
+
+async alterarSenha(email, novaSenha) {
+  const res = await fetch('/api/alterarSenha', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, novaSenha }),
+  });
+
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({}));
+    throw new Error(erro?.erro || 'Erro ao alterar senha');
+  }
+
+  return res.json();
 }
 
 
