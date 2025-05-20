@@ -33,10 +33,10 @@ export async function POST(req) {
         quantidade: quantity,
         status: payment.body.status,
         qr_code: payment.body.point_of_interaction.transaction_data.qr_code,
-        qr_code_base64: payment.body.point_of_interaction.transaction_data.qr_code_base64,
         codigo_pix: payment.body.point_of_interaction.transaction_data.qr_code,
         pagamentoId: String(payment.body.id),
         alunoId: userId,
+        tipo:'Pix',
       },
     });
 
@@ -45,7 +45,6 @@ export async function POST(req) {
       data: {
         statusPagamento: "gerado",
         codigoPix: payment.body.point_of_interaction.transaction_data.qr_code,
-        imagemPix: payment.body.point_of_interaction.transaction_data.qr_code_base64,
       },
     });
 

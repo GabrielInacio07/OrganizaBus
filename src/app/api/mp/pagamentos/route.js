@@ -1,37 +1,55 @@
+// /api/pagamento/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import mercadopago from "mercadopago";
 
 const prisma = new PrismaClient();
+
 mercadopago.configure({
-    access_token: process.env.CHAVE,
+  access_token: process.env.CHAVE,
 });
 
-export async function GET(req) {
-    const { searchParams } = new URL(req.url);
-    const motoristaId = parseInt(searchParams.get("motoristaId"));
+export async function POST(req) {
+  try {
+    const { title, price, quantity, payer, userId } = await req.json();
 
-    if (!motoristaId) {
-        return NextResponse.json({ error: "Motorista não encontrado" }, { status: 400 });
-    }
-    const alunos = await prisma.aluno.findMany({
-        where: { motoristaId },
-        include: {
-            pagamentos: true
-        },
-        orderBy: { id: "desc" },
+    const payment_data = {
+      transaction_amount: price,
+      description: title,
+      payment_method_id: "pix",
+      payer: {
+        email: payer?.email || "teste@email.com",
+        first_name: payer?.first_name || "Aluno",
+        last_name: payer?.last_name || "",
+      },
+    };
 
-    })
-    // Após criar o pagamento com Mercado Pago
-    await prisma.aluno.update({
-        where: { id: userId },
-        data: {
-            statusPagamento: "gerado",
-            codigoPix: mpResponse.qr_code,
-            imagemPix: mpResponse.qr_code_base64,
-        },
-    })
+    const payment = await mercadopago.payment.create(payment_data);
+    const transacao = payment.body.point_of_interaction.transaction_data;
 
+    // Criar registro do pagamento
+    await prisma.pagamento.create({
+      data: {
+        titulo: title,
+        valor: price,
+        quantidade: quantity,
+        status: payment.body.status,
+        qr_code: transacao.qr_code,
+        qr_code_base64: transacao.qr_code_base64,
+        codigo_pix: transacao.qr_code,
+        pagamentoId: String(payment.body.id),
+        alunoId: userId,
+      },
+    });
 
-    return NextResponse.json(alunos);
+    return NextResponse.json({
+      pagamentoId: payment.body.id,
+      status: payment.body.status,
+      qr_code: transacao.qr_code,
+      qr_code_base64: transacao.qr_code_base64,
+    });
+  } catch (error) {
+    console.error("Erro ao criar pagamento:", error);
+    return NextResponse.json({ error: "Erro ao criar pagamento" }, { status: 500 });
+  }
 }

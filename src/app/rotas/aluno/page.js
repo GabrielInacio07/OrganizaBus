@@ -1,5 +1,6 @@
 'use client'
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BotaoSair } from "@/components/botaoSair";
 import CheckoutAuxilio from "@/components/checkoutAuxilio";
@@ -10,7 +11,16 @@ export default function Alunos() {
   const router = useRouter();
   const [novaSenha, setNovaSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
-  const user = UserService.getCurrentUser();
+  const [user, setUser] = useState(null); // <- usar estado
+
+  useEffect(() => {
+    const usuario = UserService.getCurrentUser();
+    if (!usuario) {
+      router.push("/rotas/login"); // redireciona se não logado
+    } else {
+      setUser(usuario);
+    }
+  }, []);
 
   const handleLogout = () => {
     UserService.logout();
@@ -26,6 +36,8 @@ export default function Alunos() {
       setMensagem(error.message);
     }
   };
+
+  if (!user) return <p>Carregando...</p>; // <- evita renderizar antes do estado
 
   return (
     <div>

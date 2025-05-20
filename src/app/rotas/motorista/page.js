@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import { UserService } from "@/services/user.service";
 import { useRouter } from "next/navigation";
-
+import Swal from "sweetalert2";
+import dynamic from "next/dynamic";
 export default function Motorista() {
+  const DashboardChart = dynamic(() => import("@/components/dashComponent"), { ssr: false });
   const router = useRouter();
   const [motorista, setMotorista] = useState(null);
   const [formData, setFormData] = useState({
@@ -85,8 +87,12 @@ export default function Motorista() {
 
       // Enviar email com a senha
       await UserService.enviarSenhaPorEmail(formData.email, senhaAleatoria);
-
-      alert("Aluno cadastrado com sucesso e senha enviada por email.");
+      Swal.fire({
+        title: "Sucesso!",
+        text: "Aluno cadastrado com sucesso e senha enviada por email.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
 
       setFormData({
         nome: "",
@@ -301,15 +307,14 @@ export default function Motorista() {
                   <td style={{ padding: "12px" }}>{aluno.faculdade}</td>
                   <td style={{ padding: "12px" }}>{aluno.telefone}</td>
                   <td style={{ padding: "12px" }}>
-                    {aluno.pagamentos && aluno.pagamentos.length > 0 ? (
-                      aluno.pagamentos.some((p) => p.status === "approved") ? (
-                        "Pago"
-                      ) : (
-                        "Pendente"
-                      )
-                    ) : (
-                      "Não gerado"
-                    )}
+                    {aluno.pagamentos && aluno.pagamentos.length > 0
+                      ? aluno.pagamentos.map((p) => (
+                          <div key={p.id}>
+                            <strong>{p.titulo}</strong>:{" "}
+                            {p.status === "approved" ? "Pago" : "Pendente"}
+                          </div>
+                        ))
+                      : "Não gerado"}
                   </td>
 
                   <td style={{ padding: "12px" }}>
@@ -333,6 +338,8 @@ export default function Motorista() {
           </table>
         )}
       </div>
+     <DashboardChart />
+
     </div>
   );
 }

@@ -23,36 +23,34 @@ model User {
 }
 
 model Aluno {
-  id              Int          @id @default(autoincrement())
-  nome            String
-  email           String       @unique
-  telefone        String
-  cpf             String       @unique
-  senha           String
-  tipo            String
-  faculdade       String
-  motoristaId     Int
-  motorista       User         @relation(fields: [motoristaId], references: [id])
-  pagamentos      Pagamento[]
-  
-  // NOVOS CAMPOS
-  statusPagamento String?      @default("não gerado")
-  codigoPix       String? 
-  imagemPix       String?      @db.LongText
+  id               Int        @id @default(autoincrement())
+  nome             String
+  email            String     @unique
+  telefone         String
+  cpf              String     @unique
+  senha            String
+  tipo             String
+  faculdade        String
+  motoristaId      Int
+  motorista        User       @relation(fields: [motoristaId], references: [id])
+  pagamentos       Pagamento[]
+
+  statusPagamento  String     @default("não gerado") 
+  codigoPix        String?                             
 }
 
-
 model Pagamento {
-  id  Int   @id @default(autoincrement())
-  titulo String
-  valor Float
-  quantidade Int
-  status String
-  qr_code String
-  qr_code_base64 String @db.LongText
-  codigo_pix String
-  pagamentoId String
-  criadoEm DateTime @default(now())
-  alunoId Int?
-  aluno Aluno? @relation(fields: [alunoId], references: [id])
+  id               Int      @id @default(autoincrement())
+  titulo           String
+  tipo             String   // "mensalidade" | "auxilio"
+  valor            Float
+  quantidade       Int
+  status           String
+  qr_code          String
+  
+  codigo_pix       String
+  pagamentoId      String
+  criadoEm         DateTime @default(now())
+  alunoId          Int?
+  aluno            Aluno?   @relation(fields: [alunoId], references: [id])
 }
