@@ -4,33 +4,44 @@ import { UserService } from "@/services/user.service";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import dynamic from "next/dynamic";
+import {
+  Button,
+} from "@/components/ui/button";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Users,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import ResumoCard from "@/components/dashboard/ResumoCard";
+
 export default function Motorista() {
   const DashboardChart = dynamic(() => import("@/components/dashComponent"), { ssr: false });
   const router = useRouter();
   const [motorista, setMotorista] = useState(null);
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    telefone: "",
-    cpf: "",
-    faculdade: "",
-  });
+  const [formData, setFormData] = useState({ nome: "", email: "", telefone: "", cpf: "", faculdade: "" });
   const [alunos, setAlunos] = useState([]);
   const [motoristaLogado, setMotoristaLogado] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [data, setData] = useState([]);
 
   useEffect(() => {
     const verificarLogin = async () => {
       const user = UserService.getCurrentUser();
       setMotorista(user);
-      console.log("Usuário no localStorage:", user);
-
-      if (user && user.tipo && user.tipo.toLowerCase() === "motorista") {
+      if (user && user.tipo?.toLowerCase() === "motorista") {
         setMotoristaLogado(true);
         await carregarAlunos();
+        await carregarGrafico(user.id);
       } else {
-        alert(
-          "Você não está logado como motorista ou não tem permissão para acessar esta página."
-        );
+        alert("Você não está logado como motorista ou não tem permissão.");
         router.push("/rotas/login");
       }
     };
@@ -40,26 +51,36 @@ export default function Motorista() {
   const carregarAlunos = async () => {
     try {
       const alunosCadastrados = await UserService.listarAlunos();
-      console.log("Alunos carregados:", alunosCadastrados);
       setAlunos(alunosCadastrados);
     } catch (err) {
       console.error("Erro ao carregar alunos:", err);
-      setAlunos([]); // evita quebra com map
+      setAlunos([]);
     }
+  };
+
+  const carregarGrafico = async (id) => {
+    const res = await fetch(`/api/dashboard/pagamentos?motoristaId=${id}`);
+    const result = await res.json();
+    setData([
+      { name: "Pagos", value: result.approved || 0 },
+      { name: "Pendentes", value: result.pending || 0 },
+      { name: "Não pagos após prazo", value: result.not_paid || 0 },
+      { name: "Não gerados", value: result.nao_gerado || 0 },
+    ]);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
   const handleRemoverAluno = async (id) => {
     if (confirm("Tem certeza que deseja remover este aluno?")) {
       try {
         await UserService.removerAluno(id);
         alert("Aluno removido com sucesso.");
-        await carregarAlunos(); // garantir que seja recarregado após remoção
+        await carregarAlunos();
       } catch (error) {
-        console.error("Erro ao remover aluno:", error);
         alert("Erro ao remover aluno: " + error.message);
       }
     }
@@ -68,11 +89,7 @@ export default function Motorista() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const currentUser = UserService.getCurrentUser(); // corrigido aqui
-
-      // Gerar senha aleatória
       const senhaAleatoria = Math.random().toString(36).slice(-8);
-
       const novoAluno = await UserService.registrarAluno(
         formData.nome,
         formData.email,
@@ -82,26 +99,10 @@ export default function Motorista() {
         formData.faculdade,
         motorista.id
       );
-
-      console.log("Novo aluno cadastrado:", novoAluno);
-
-      // Enviar email com a senha
       await UserService.enviarSenhaPorEmail(formData.email, senhaAleatoria);
-      Swal.fire({
-        title: "Sucesso!",
-        text: "Aluno cadastrado com sucesso e senha enviada por email.",
-        icon: "success",
-        confirmButtonText: "OK",
-      });
-
-      setFormData({
-        nome: "",
-        email: "",
-        telefone: "",
-        cpf: "",
-        faculdade: "",
-      });
-
+      Swal.fire("Sucesso!", "Aluno cadastrado e senha enviada por email.", "success");
+      setFormData({ nome: "", email: "", telefone: "", cpf: "", faculdade: "" });
+      setShowModal(false);
       carregarAlunos();
     } catch (error) {
       alert(error.message);
@@ -113,233 +114,98 @@ export default function Motorista() {
     router.push("/rotas/login");
   };
 
-  if (!motoristaLogado) {
-    return <div>Verificando login...</div>;
-  }
+  if (!motoristaLogado) return <div>Verificando login...</div>;
 
   return (
-    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>Página Motorista {motorista?.nome}</h1>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: "8px 16px",
-            background: "#f44336",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-          }}
-        >
-          Sair
-        </button>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Dashboard do Motorista {motorista?.nome}</h1>
+        <Button variant="destructive" onClick={handleLogout}>Sair</Button>
+      </div>
+       <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogTrigger asChild>
+          <Button className="mt-8 mb-8">Cadastrar Novo Aluno</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Cadastro de Aluno</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+            {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
+              <input
+                key={campo}
+                type={campo === "email" ? "email" : "text"}
+                name={campo}
+                value={formData[campo]}
+                onChange={handleChange}
+                placeholder={campo.charAt(0).toUpperCase() + campo.slice(1)}
+                className="border p-2 rounded w-full"
+                required
+              />
+            ))}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>
+              <Button type="submit">Cadastrar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <ResumoCard titulo="Total de Alunos" valor={alunos.length} Icone={Users} cor="text-blue-500" />
+        <ResumoCard titulo="Pagamentos Aprovados" valor={data[0]?.value || 0} Icone={CheckCircle} cor="text-green-500" />
+        <ResumoCard titulo="Pendentes" valor={data[1]?.value || 0} Icone={Clock} cor="text-yellow-500" />
+        <ResumoCard titulo="Não Gerados" valor={data[3]?.value || 0} Icone={XCircle} cor="text-gray-400" />
       </div>
 
-      <div
-        style={{
-          marginBottom: "40px",
-          border: "1px solid #ddd",
-          padding: "20px",
-          borderRadius: "8px",
-        }}
-      >
-        <h2>Cadastrar Novo Aluno</h2>
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "16px",
-          }}
-        >
-          <div>
-            <label htmlFor="nome">Nome</label>
-            <input
-              type="text"
-              id="nome"
-              name="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
-            />
-          </div>
+      <DashboardChart />
 
-          <div>
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
-            />
-          </div>
+     
 
-          <div>
-            <label htmlFor="telefone">Telefone</label>
-            <input
-              type="tel"
-              id="telefone"
-              name="telefone"
-              value={formData.telefone}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="cpf">CPF</label>
-            <input
-              type="text"
-              id="cpf"
-              name="cpf"
-              value={formData.cpf}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="faculdade">Faculdade</label>
-            <input
-              type="text"
-              id="faculdade"
-              name="faculdade"
-              value={formData.faculdade}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
-            />
-          </div>
-
-          <div style={{ gridColumn: "1 / -1" }}>
-            <button
-              type="submit"
-              style={{
-                padding: "10px 20px",
-                background: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Cadastrar
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div>
-        <h2>Alunos Cadastrados</h2>
-        {alunos.length === 0 ? (
-          <p>Nenhum aluno cadastrado ainda.</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f2f2f2" }}>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Nome
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Email
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Faculdade
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Telefone
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Pix
-                </th>
+      <h2 className="text-xl font-semibold mt-12 mb-2">Alunos Cadastrados</h2>
+      <div className="rounded-md border overflow-x-auto">
+        <table className="w-full table-auto text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="px-4 py-2 text-left">Nome</th>
+              <th className="px-4 py-2 text-left">Email</th>
+              <th className="px-4 py-2 text-left">Faculdade</th>
+              <th className="px-4 py-2 text-left">Telefone</th>
+              <th className="px-4 py-2 text-left">Pix</th>
+              <th className="px-4 py-2 text-left">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {alunos.map((aluno) => (
+              <tr key={aluno.id} className="border-t">
+                <td className="px-4 py-2">{aluno.nome}</td>
+                <td className="px-4 py-2">{aluno.email}</td>
+                <td className="px-4 py-2">{aluno.faculdade}</td>
+                <td className="px-4 py-2">{aluno.telefone}</td>
+                <td className="px-4 py-2">
+                  {aluno.pagamentos?.length
+                    ? aluno.pagamentos.map((p) => (
+                        <div key={p.id}>
+                          <strong>{p.titulo}</strong>: {p.status === "approved" ? "Pago" : "Pendente"}
+                        </div>
+                      ))
+                    : "Não gerado"}
+                </td>
+                <td className="px-4 py-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoverAluno(aluno.id)}
+                    className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
+                  >
+                    Remover
+                  </Button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {alunos.map((aluno) => (
-                <tr
-                  key={aluno.id || aluno.cpf}
-                  style={{ borderBottom: "1px solid #ddd" }}
-                >
-                  <td style={{ padding: "12px" }}>{aluno.nome}</td>
-                  <td style={{ padding: "12px" }}>{aluno.email}</td>
-                  <td style={{ padding: "12px" }}>{aluno.faculdade}</td>
-                  <td style={{ padding: "12px" }}>{aluno.telefone}</td>
-                  <td style={{ padding: "12px" }}>
-                    {aluno.pagamentos && aluno.pagamentos.length > 0
-                      ? aluno.pagamentos.map((p) => (
-                          <div key={p.id}>
-                            <strong>{p.titulo}</strong>:{" "}
-                            {p.status === "approved" ? "Pago" : "Pendente"}
-                          </div>
-                        ))
-                      : "Não gerado"}
-                  </td>
-
-                  <td style={{ padding: "12px" }}>
-                    <button
-                      onClick={() => handleRemoverAluno(aluno.id)}
-                      style={{
-                        background: "#e53935",
-                        color: "white",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
-     <DashboardChart />
-
     </div>
   );
 }

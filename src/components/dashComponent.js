@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { UserService } from "@/services/user.service";
 
-const COLORS = ["#4caf50", "#ff9800", "#2196f3", "#f44336", "#9e9e9e"];
+const COLORS = ["#4caf50", "#ff9800", "#f44336", "#9e9e9e"];
 
 export default function DashboardChart() {
   const [data, setData] = useState([]);
@@ -19,7 +19,6 @@ export default function DashboardChart() {
       setData([
         { name: "Pagos", value: result.approved || 0 },
         { name: "Pendentes", value: result.pending || 0 },
-        { name: "Processando", value: result.in_process || 0 },
         { name: "Não pagos após prazo", value: result.not_paid || 0 },
         { name: "Não gerados", value: result.nao_gerado || 0 },
       ]);
