@@ -43,7 +43,7 @@ model Pagamento {
   id               Int      @id @default(autoincrement())
   titulo           String
   tipo             String   // "mensalidade" | "auxilio"
-  valor            Float
+  valor            Decimal
   quantidade       Int
   status           String
   qr_code          String

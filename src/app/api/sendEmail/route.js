@@ -13,7 +13,7 @@ export async function POST(req) {
 
   try {
     await transporter.sendMail({
-      from: process.env.GMAIL_USER,
+      from: `"OrganizaBus" <${process.env.GMAIL_USER}>`,
       to,
       subject,
       text,
