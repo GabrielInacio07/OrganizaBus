@@ -30,6 +30,8 @@ export default function Motorista() {
   const [alunos, setAlunos] = useState([]);
   const [motoristaLogado, setMotoristaLogado] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -72,6 +74,37 @@ export default function Motorista() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const abrirModalEdicao = (aluno) => {
+    setAlunoSelecionado(aluno);
+    setFormData({
+      nome: aluno.nome || "",
+      email: aluno.email || "",
+      telefone: aluno.telefone || "",
+      cpf: aluno.cpf || "",
+      faculdade: aluno.faculdade || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditarAluno = async (e) => {
+    e.preventDefault();
+    try {
+      await UserService.atualizarAluno(alunoSelecionado.id, {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        cpf: formData.cpf,
+        faculdade: formData.faculdade,
+      });
+      Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
+      setShowEditModal(false);
+      setAlunoSelecionado(null);
+      await carregarAlunos();
+    } catch (error) {
+      alert("Erro ao atualizar aluno: " + error.message);
+    }
   };
 
   const handleRemoverAluno = async (id) => {
@@ -122,7 +155,7 @@ export default function Motorista() {
         <h1 className="text-2xl font-bold">Dashboard do Motorista {motorista?.nome}</h1>
         <Button variant="destructive" onClick={handleLogout}>Sair</Button>
       </div>
-       <Dialog open={showModal} onOpenChange={setShowModal}>
+    <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogTrigger asChild>
           <Button className="mt-8 mb-8">Cadastrar Novo Aluno</Button>
         </DialogTrigger>
@@ -150,7 +183,6 @@ export default function Motorista() {
           </form>
         </DialogContent>
       </Dialog>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <ResumoCard titulo="Total de Alunos" valor={alunos.length} Icone={Users} cor="text-blue-500" />
         <ResumoCard titulo="Pagamentos Aprovados" valor={data[0]?.value || 0} Icone={CheckCircle} cor="text-green-500" />
@@ -160,7 +192,32 @@ export default function Motorista() {
 
       <DashboardChart />
 
-     
+      
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Editar Aluno</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditarAluno} className="grid gap-4 py-4">
+            {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
+              <input
+                key={campo}
+                type={campo === "email" ? "email" : "text"}
+                name={campo}
+                value={formData[campo]}
+                onChange={handleChange}
+                placeholder={campo.charAt(0).toUpperCase() + campo.slice(1)}
+                className="border p-2 rounded w-full"
+                required
+              />
+            ))}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>Cancelar</Button>
+              <Button type="submit">Salvar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <h2 className="text-xl font-semibold mt-12 mb-2">Alunos Cadastrados</h2>
       <div className="rounded-md border overflow-x-auto">
@@ -191,7 +248,15 @@ export default function Motorista() {
                       ))
                     : "Não gerado"}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => abrirModalEdicao(aluno)}
+                    className="bg-blue-500 text-white hover:bg-blue-600 hover:text-white"
+                  >
+                    Editar
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

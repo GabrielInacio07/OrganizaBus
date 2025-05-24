@@ -145,6 +145,17 @@ async removerAluno(id) {
   }
 },
 
+async atualizarAluno(id, dadosAtualizados) {
+  const res = await fetch(`/api/alunos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dadosAtualizados),
+  });
+  if (!res.ok) throw new Error("Erro ao atualizar aluno");
+  return await res.json();
+},
+
+
 async alterarSenha(email, novaSenha) {
   const res = await fetch('/api/alterarSenha', {
     method: 'PUT',
