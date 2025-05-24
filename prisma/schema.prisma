@@ -47,7 +47,6 @@ model Pagamento {
   quantidade       Int
   status           String
   qr_code          String
-  
   codigo_pix       String
   pagamentoId      String
   criadoEm         DateTime @default(now())

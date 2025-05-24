@@ -25,12 +25,11 @@ export const UserService = {
       faculdade,
       tipo: 'aluno',
       motoristaId,
-      statusPagamento: 'não gerado' // <- garante que seja enviado
+      statusPagamento: 'não gerado'
     }),
   });
   return res.json();
-}
-,
+},
 
   async enviarSenhaPorEmail(email, senha) {
     try {
@@ -87,7 +86,6 @@ Equipe OrganizaBus`,
   }
 },
 
-
   // SESSION
   setCurrentUser(user) {
     if (user?.tipo) {
@@ -105,7 +103,61 @@ Equipe OrganizaBus`,
     localStorage.removeItem('usuario');
   },
 
-  // Suporte para lista e remoção de alunos (exemplo fictício se ainda não implementado)
+  // PERFIL DO MOTORISTA
+  async obterPerfilMotorista(id) {
+    const res = await fetch(`${base}/motorista/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || 'Erro ao buscar perfil do motorista');
+    }
+
+    return res.json();
+  },
+
+  async atualizarPerfilMotorista(id, dadosAtualizados) {
+    const res = await fetch(`${base}/motorista/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosAtualizados),
+    });
+
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || 'Erro ao atualizar perfil');
+    }
+
+    const dadosAtualizadosResponse = await res.json();
+    
+    // Atualizar dados no localStorage
+    const usuarioAtual = this.getCurrentUser();
+    if (usuarioAtual && usuarioAtual.id === id) {
+      const usuarioAtualizado = { ...usuarioAtual, ...dadosAtualizadosResponse };
+      this.setCurrentUser(usuarioAtualizado);
+    }
+
+    return dadosAtualizadosResponse;
+  },
+
+  async alterarSenhaMotorista(id, senhaAtual, novaSenha) {
+    const res = await fetch(`${base}/motorista/${id}/senha`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senhaAtual, novaSenha }),
+    });
+
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || 'Erro ao alterar senha');
+    }
+
+    return res.json();
+  },
+
+  // Suporte para lista e remoção de alunos
 async listarAlunos() {
   const user = this.getCurrentUser();
   if (!user?.id) throw new Error('Usuário não encontrado');
@@ -117,8 +169,6 @@ async listarAlunos() {
   }
   return res.json();
 },
-
-  
 
 async removerAluno(id) {
   const res = await fetch('/api/alunos', {
@@ -155,7 +205,6 @@ async atualizarAluno(id, dadosAtualizados) {
   return await res.json();
 },
 
-
 async alterarSenha(email, novaSenha) {
   const res = await fetch('/api/alterarSenha', {
     method: 'PUT',
@@ -170,7 +219,4 @@ async alterarSenha(email, novaSenha) {
 
   return res.json();
 }
-
-
-
 };
