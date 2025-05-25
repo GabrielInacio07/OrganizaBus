@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = global;
+const globalForPrisma = globalThis;
 
 const prisma = globalForPrisma.prisma || new PrismaClient();
 

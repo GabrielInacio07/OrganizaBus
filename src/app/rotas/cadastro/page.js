@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -13,10 +14,10 @@ import {
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { UserService } from "@/services/user.service";
-import { useRouter } from "next/navigation";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 export default function CadastroPage() {
+  const router = useRouter();
   const [isLightMode, setIsLightMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,10 +26,14 @@ export default function CadastroPage() {
     telefone: "",
     cpf: "",
     password: "",
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({ telefone: "", cpf: "" });
-  const router = useRouter();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isLightMode);
+  }, [isLightMode]);
 
   const formatarTelefone = (value) => {
     const nums = value.replace(/\D/g, "");
@@ -72,6 +77,15 @@ export default function CadastroPage() {
     if (!validarCPF(formData.cpf)) {
       errors.cpf = "CPF inválido (deve ter 11 dígitos)";
     }
+    if (formData.password.length < 6) {
+      setError("A senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("As senhas não coincidem");
+      return;
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -89,81 +103,156 @@ export default function CadastroPage() {
       alert("Usuário cadastrado com sucesso");
       router.push("/rotas/login");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Erro ao cadastrar");
     }
   };
 
-  useEffect(() =>{
-    document.documentElement.classList.toggle("dark", isLightMode);
-  }, [isLightMode]);
-
   return (
-     <div className={`${isLightMode ? "bg-gray-100 text-black" : "bg-neutral-900 text-white"} w-full h-screen relative`}>
-      <ThemeToggleButton isLightMode={isLightMode} setIsLightMode={setIsLightMode} />
+    <div
+      className={`${
+        isLightMode ? "bg-gray-100" : "bg-[#121212]"
+      } min-h-screen flex items-center justify-center transition-colors duration-300`}
+    >
+      <div className="absolute top-5 right-5 z-10">
+        <ThemeToggleButton
+          isLightMode={isLightMode}
+          setIsLightMode={setIsLightMode}
+        />
+      </div>
 
-     <div className="flex justify-center items-center h-full animate-fadeIn">
-        <form
-          onSubmit={handleSubmit}
-          className={`w-[clamp(320px,40vw,480px)] rounded-xl shadow-lg p-8 flex flex-col gap-4 ${
-            isLightMode ? "bg-gray-100" : "bg-neutral-800"
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className={`text-center text-sm ${
+            isLightMode ? "text-gray-800" : "text-white"
           }`}
         >
-          <Link href="/" className="text-sm text-blue-500 hover:underline mb-2">
-            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover:text-gray-400 transition-colors"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
             Voltar para a página inicial
           </Link>
+        </div>
 
-          <h1 className="text-2xl font-bold mb-2">Crie sua Conta</h1>
-
-          {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm text-center">
-              {error}
-            </div>
-          )}
+        <form
+          onSubmit={handleSubmit}
+          className={`flex flex-col items-center gap-4 w-[clamp(320px,40vw,480px)] p-12 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${
+            isLightMode ? "bg-white shadow-lg" : "bg-[#1e1e1e]"
+          }`}
+        >
+          <h1
+            className={`text-3xl mb-4 font-semibold ${
+              isLightMode ? "text-gray-900" : "text-white"
+            }`}
+          >
+            Criar Conta
+          </h1>
 
           {[
-            { icon: faUser, name: "name", placeholder: "Seu nome", type: "text" },
-            { icon: faEnvelope, name: "email", placeholder: "Seu e-mail", type: "email" },
-            { icon: faPhone, name: "telefone", placeholder: "Seu telefone", type: "text", maxLength: 15 },
-            { icon: faIdCard, name: "cpf", placeholder: "Seu CPF", type: "text", maxLength: 14 },
+            { icon: faUser, name: "name", type: "text", placeholder: "Nome" },
+            {
+              icon: faEnvelope,
+              name: "email",
+              type: "email",
+              placeholder: "Email",
+            },
+            {
+              icon: faPhone,
+              name: "telefone",
+              type: "text",
+              placeholder: "Telefone",
+              maxLength: 15,
+            },
+            {
+              icon: faIdCard,
+              name: "cpf",
+              type: "text",
+              placeholder: "CPF",
+              maxLength: 14,
+            },
           ].map(({ icon, ...input }) => (
-            <div key={input.name} className="flex items-center bg-white dark:bg-neutral-700 rounded-lg px-3 py-2">
-              <FontAwesomeIcon icon={icon} className="text-gray-500 mr-2" />
+            <div
+              key={input.name}
+              className={`flex items-center px-4 py-2 rounded-xl w-full h-12 shadow-inner gap-2 ${
+                isLightMode
+                  ? "bg-gray-200 text-gray-800"
+                  : "bg-[#121212] text-white"
+              }`}
+            >
+              <FontAwesomeIcon icon={icon} className="text-lg" />
               <input
                 {...input}
                 value={formData[input.name]}
                 onChange={(e) => handleFormEdit(e, input.name)}
+                className="bg-transparent outline-none w-full placeholder-gray-500"
                 required
-                className="flex-1 bg-transparent outline-none text-black dark:text-white"
               />
             </div>
           ))}
 
-          {fieldErrors.telefone && <p className="text-red-500 text-sm">{fieldErrors.telefone}</p>}
-          {fieldErrors.cpf && <p className="text-red-500 text-sm">{fieldErrors.cpf}</p>}
+          {fieldErrors.telefone && (
+            <p className="text-red-500 text-sm">{fieldErrors.telefone}</p>
+          )}
+          {fieldErrors.cpf && (
+            <p className="text-red-500 text-sm">{fieldErrors.cpf}</p>
+          )}
 
-          <div className="relative flex items-center bg-white dark:bg-neutral-700 rounded-lg px-3 py-2">
-            <FontAwesomeIcon icon={faLock} className="text-gray-500 mr-2" />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Sua senha"
-              required
-              value={formData.password}
-              onChange={(e) => handleFormEdit(e, "password")}
-              className="flex-1 bg-transparent outline-none text-black dark:text-white"
-            />
-            <FontAwesomeIcon
-              icon={showPassword ? faEye : faEyeSlash}
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 text-gray-500 cursor-pointer"
-            />
-          </div>
+          {/* Senha */}
+          {["password", "confirmPassword"].map((field, i) => (
+            <div
+              key={field}
+              className={`relative flex items-center px-4 py-2 rounded-xl w-full h-12 shadow-inner gap-2 ${
+                isLightMode
+                  ? "bg-gray-200 text-gray-800"
+                  : "bg-[#121212] text-white"
+              }`}
+            >
+              <FontAwesomeIcon icon={faLock} className="text-lg" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder={i === 0 ? "Senha" : "Repita a senha"}
+                value={formData[field]}
+                onChange={(e) => handleFormEdit(e, field)}
+                className="bg-transparent outline-none w-full placeholder-gray-500"
+                required
+              />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
+              >
+                <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
+              </span>
+            </div>
+          ))}
 
-          <button type="submit" className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-500 transition">
+          {error && (
+            <div
+              className={`w-full p-2 rounded-md text-sm text-center transition-all ${
+                isLightMode
+                  ? "bg-red-100 text-red-700"
+                  : "bg-red-200 text-red-800"
+              }`}
+            >
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className={`w-full rounded-md py-2 font-medium transition-colors ${
+              isLightMode
+                ? "bg-blue-500 text-white hover:bg-blue-600"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
             Cadastrar
           </button>
 
-          <Link href="/rotas/login" className="text-sm text-blue-500 hover:underline text-center">
+          <Link
+            href="/rotas/login"
+            className="text-sm text-blue-500 hover:underline text-center"
+          >
             Já possui conta? Faça login
           </Link>
         </form>

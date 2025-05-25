@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req) {
   const body = await req.json();
+  console.log("Body recebido:", body);
   const { nome, email, telefone, cpf, senha, tipo } = body;
 
   try {
