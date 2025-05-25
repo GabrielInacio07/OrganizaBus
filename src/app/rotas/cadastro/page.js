@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,19 +9,16 @@ import {
   faIdCard,
   faLock,
   faArrowLeft,
-  faSun,
-  faMoon,
   faEye,
   faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
-import styles from "@/styles/components/cadastroCard.module.css";
 import { UserService } from "@/services/user.service";
 import { useRouter } from "next/navigation";
+import ThemeToggleButton from "@/components/ThemeToggleButton";
 
 export default function CadastroPage() {
+  const [isLightMode, setIsLightMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -30,23 +27,14 @@ export default function CadastroPage() {
     password: "",
   });
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({
-    telefone: "",
-    cpf: "",
-  });
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ telefone: "", cpf: "" });
+  const router = useRouter();
 
   const formatarTelefone = (value) => {
     const nums = value.replace(/\D/g, "");
-    if (nums.length <= 10) {
-      return nums
-        .replace(/(\d{2})(\d)/, "($1) $2")
-        .replace(/(\d{4})(\d)/, "$1-$2");
-    } else {
-      return nums
-        .replace(/(\d{2})(\d)/, "($1) $2")
-        .replace(/(\d{5})(\d)/, "$1-$2");
-    }
+    return nums.length <= 10
+      ? nums.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2")
+      : nums.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
   };
 
   const formatarCPF = (value) => {
@@ -57,39 +45,24 @@ export default function CadastroPage() {
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
   };
 
-  const validarTelefone = (telefone) => {
-    const nums = telefone.replace(/\D/g, "");
-    return nums.length >= 10;
+  const validarTelefone = (tel) => tel.replace(/\D/g, "").length >= 10;
+  const validarCPF = (cpf) => cpf.replace(/\D/g, "").length === 11;
+
+  const handleFormEdit = (e, name) => {
+    const value = e.target.value;
+    const formattedValue =
+      name === "telefone"
+        ? formatarTelefone(value)
+        : name === "cpf"
+        ? formatarCPF(value)
+        : value;
+
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validarCPF = (cpf) => {
-    const nums = cpf.replace(/\D/g, "");
-    return nums.length === 11;
-  };
-
-  const handleFormEdit = (event, name) => {
-    const value = event.target.value;
-
-    let formattedValue = value;
-    if (name === "telefone") {
-      formattedValue = formatarTelefone(value);
-    } else if (name === "cpf") {
-      formattedValue = formatarCPF(value);
-    }
-
-    setFormData({
-      ...formData,
-      [name]: formattedValue,
-    });
-
-    setFieldErrors({
-      ...fieldErrors,
-      [name]: "",
-    });
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
 
     const errors = {};
@@ -115,139 +88,85 @@ export default function CadastroPage() {
       );
       alert("Usuário cadastrado com sucesso");
       router.push("/rotas/login");
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
-  const toggleTheme = () => {
-    setIsLightMode(!isLightMode);
-  };
+  useEffect(() =>{
+    document.documentElement.classList.toggle("dark", isLightMode);
+  }, [isLightMode]);
 
   return (
-    <div
-      className={`${styles.container} ${isLightMode ? styles.lightMode : ""}`}
-    >
-      <div className={styles.background}>
-        <div className={styles.themeToggleContainer}>
-          <label className={styles.switch}>
+     <div className={`${isLightMode ? "bg-gray-100 text-black" : "bg-neutral-900 text-white"} w-full h-screen relative`}>
+      <ThemeToggleButton isLightMode={isLightMode} setIsLightMode={setIsLightMode} />
+
+     <div className="flex justify-center items-center h-full animate-fadeIn">
+        <form
+          onSubmit={handleSubmit}
+          className={`w-[clamp(320px,40vw,480px)] rounded-xl shadow-lg p-8 flex flex-col gap-4 ${
+            isLightMode ? "bg-gray-100" : "bg-neutral-800"
+          }`}
+        >
+          <Link href="/" className="text-sm text-blue-500 hover:underline mb-2">
+            <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+            Voltar para a página inicial
+          </Link>
+
+          <h1 className="text-2xl font-bold mb-2">Crie sua Conta</h1>
+
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {[
+            { icon: faUser, name: "name", placeholder: "Seu nome", type: "text" },
+            { icon: faEnvelope, name: "email", placeholder: "Seu e-mail", type: "email" },
+            { icon: faPhone, name: "telefone", placeholder: "Seu telefone", type: "text", maxLength: 15 },
+            { icon: faIdCard, name: "cpf", placeholder: "Seu CPF", type: "text", maxLength: 14 },
+          ].map(({ icon, ...input }) => (
+            <div key={input.name} className="flex items-center bg-white dark:bg-neutral-700 rounded-lg px-3 py-2">
+              <FontAwesomeIcon icon={icon} className="text-gray-500 mr-2" />
+              <input
+                {...input}
+                value={formData[input.name]}
+                onChange={(e) => handleFormEdit(e, input.name)}
+                required
+                className="flex-1 bg-transparent outline-none text-black dark:text-white"
+              />
+            </div>
+          ))}
+
+          {fieldErrors.telefone && <p className="text-red-500 text-sm">{fieldErrors.telefone}</p>}
+          {fieldErrors.cpf && <p className="text-red-500 text-sm">{fieldErrors.cpf}</p>}
+
+          <div className="relative flex items-center bg-white dark:bg-neutral-700 rounded-lg px-3 py-2">
+            <FontAwesomeIcon icon={faLock} className="text-gray-500 mr-2" />
             <input
-              type="checkbox"
-              checked={isLightMode}
-              onChange={toggleTheme}
+              type={showPassword ? "text" : "password"}
+              placeholder="Sua senha"
+              required
+              value={formData.password}
+              onChange={(e) => handleFormEdit(e, "password")}
+              className="flex-1 bg-transparent outline-none text-black dark:text-white"
             />
-            <span className={`${styles.slider} ${styles.round}`}>
-              <span className={styles.icon}>
-                <FontAwesomeIcon
-                  icon={isLightMode ? faSun : faMoon}
-                  className={isLightMode ? styles.sunIcon : styles.moonIcon}
-                />
-              </span>
-            </span>
-          </label>
-        </div>
-
-        <div className={styles.cardWrapper}>
-          <div className={styles.voltarPagina}>
-            <Link href={"/"}>
-              <FontAwesomeIcon icon={faArrowLeft} /> Voltar para a página
-              inicial
-            </Link>
+            <FontAwesomeIcon
+              icon={showPassword ? faEye : faEyeSlash}
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 text-gray-500 cursor-pointer"
+            />
           </div>
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.loginCardTitle}>Crie sua Conta</div>
 
-            {error && (
-              <div className={styles.errorContainer}>
-                <p className={styles.error}>{error}</p>
-              </div>
-            )}
+          <button type="submit" className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-500 transition">
+            Cadastrar
+          </button>
 
-            <div className={styles.field}>
-              <FontAwesomeIcon icon={faUser} className={styles.inputIcon} />
-              <input
-                type="text"
-                placeholder="Seu Nome"
-                className={styles.inputField}
-                required
-                value={formData.name}
-                onChange={(e) => handleFormEdit(e, "name")}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <FontAwesomeIcon icon={faEnvelope} className={styles.inputIcon} />
-              <input
-                type="email"
-                placeholder="Seu e-mail"
-                className={styles.inputField}
-                required
-                value={formData.email}
-                onChange={(e) => handleFormEdit(e, "email")}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <FontAwesomeIcon icon={faPhone} className={styles.inputIcon} />
-              <input
-                type="text"
-                placeholder="Seu Telefone"
-                className={styles.inputField}
-                required
-                value={formData.telefone}
-                onChange={(e) => handleFormEdit(e, "telefone")}
-                maxLength={15}
-              />
-            </div>
-            {fieldErrors.telefone && (
-              <span className={styles.error}>{fieldErrors.telefone}</span>
-            )}
-
-            <div className={styles.field}>
-              <FontAwesomeIcon icon={faIdCard} className={styles.inputIcon} />
-              <input
-                type="text"
-                placeholder="Seu CPF"
-                className={styles.inputField}
-                required
-                value={formData.cpf}
-                onChange={(e) => handleFormEdit(e, "cpf")}
-                maxLength={14}
-              />
-            </div>
-            {fieldErrors.cpf && (
-              <span className={styles.error}>{fieldErrors.cpf}</span>
-            )}
-
-            <div className={styles.field} style={{ position: "relative" }}>
-              <FontAwesomeIcon icon={faLock} className={styles.inputIcon} />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Sua senha"
-                className={styles.inputField}
-                required
-                value={formData.password}
-                onChange={(e) => handleFormEdit(e, "password")}
-              />
-              <span
-                className={styles.togglePassword}
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash } />
-              </span>
-            </div>
-
-            <div className={styles.btn}>
-              <button type="submit" className={styles.button1}>
-                Cadastrar
-              </button>
-            </div>
-
-            <Link href="/rotas/login" className={styles.link}>
-              Já possui conta? Faça login
-            </Link>
-          </form>
-        </div>
+          <Link href="/rotas/login" className="text-sm text-blue-500 hover:underline text-center">
+            Já possui conta? Faça login
+          </Link>
+        </form>
       </div>
     </div>
   );

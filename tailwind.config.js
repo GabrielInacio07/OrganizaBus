@@ -1,3 +1,5 @@
+const { keyframes } = require('framer-motion');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
@@ -57,7 +59,18 @@ module.exports = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			}
-  		}
+  		},
+		extend:{
+			animation:{
+				fadeIn: 'fadeIn 0.5s ease-in-out',
+			},
+			keyframes:{
+				fadeIn: {
+					'0%': { opacity: 0 },
+					'100%': { opacity: 1 }
+				}
+			}
+		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

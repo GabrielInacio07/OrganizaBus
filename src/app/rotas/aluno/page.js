@@ -11,7 +11,7 @@ export default function Alunos() {
   const router = useRouter();
   const [novaSenha, setNovaSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
-  const [user, setUser] = useState(null); // <- usar estado
+  const [user, setUser] = useState(null); 
 
   useEffect(() => {
     const usuario = UserService.getCurrentUser();
