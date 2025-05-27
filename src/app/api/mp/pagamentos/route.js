@@ -39,6 +39,7 @@ export async function POST(req) {
         codigo_pix: transacao.qr_code,
         pagamentoId: String(payment.body.id),
         alunoId: userId,
+        expiraEm: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
 

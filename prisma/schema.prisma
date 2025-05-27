@@ -34,7 +34,6 @@ model Aluno {
   motoristaId      Int
   motorista        User       @relation(fields: [motoristaId], references: [id])
   pagamentos       Pagamento[]
-
   statusPagamento  String     @default("não gerado") 
   codigoPix        String?                             
 }
@@ -50,6 +49,7 @@ model Pagamento {
   codigo_pix       String
   pagamentoId      String
   criadoEm         DateTime @default(now())
+  expiraEm       DateTime
   alunoId          Int?
   aluno            Aluno?   @relation(fields: [alunoId], references: [id])
 }

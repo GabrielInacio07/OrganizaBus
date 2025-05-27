@@ -35,8 +35,9 @@ export async function POST(req) {
         qr_code: payment.body.point_of_interaction.transaction_data.qr_code,
         codigo_pix: payment.body.point_of_interaction.transaction_data.qr_code,
         pagamentoId: String(payment.body.id),
-        alunoId: userId,
+        aluno: {connect: { id: userId }},
         tipo:'Pix',
+        expiraEm: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
 
