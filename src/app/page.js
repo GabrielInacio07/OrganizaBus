@@ -1,33 +1,37 @@
-'use client'
-//Estilos
-import styles from "@/styles/Home.module.css";
+'use client';
 
-//Importações React
 import { useRef } from "react";
-import { useInView } from "framer-motion";
-
-//Components
 import Navbar from "@/components/Navbar";
 import HeroContent from "@/components/hero/HeroContent";
 import AboutSection from "@/components/secaoSobre";
-import LoadingOverlay from "@/components/loadingOverlay";
+import Footer from "@/components/Footer";
+import Separator from "@/components/separador/Separador";
+import ContatoPage from "@/components/Contato";
+import EquipePage from "@/components/Equipe";
 
 export default function Home() {
   const sobreRef = useRef(null);
-  const isInView = useInView(sobreRef, { once: true, margin: "-100px", amount: 0.3 });
+  const equipeRef = useRef(null);
+  const contatoRef = useRef(null);
 
   return (
-    <div className={styles.container}>
+    <div className="w-full min-h-screen overflow-x-hidden">
       <Navbar />
-      <div className={styles.sliderWrapper}>
-       
-        <HeroContent />
+      <HeroContent />
+      <div>
+        <div ref={sobreRef}>
+          <AboutSection />
+        </div>
+        <Separator />
+        <div ref={equipeRef}>
+          <EquipePage />
+        </div>
+        <Separator />
+        <div ref={contatoRef}>
+          <ContatoPage />
+        </div>
       </div>
-     
-      <div ref={sobreRef} className={styles.sobreWrapper}>
-        <AboutSection isInView={isInView} />
-      </div>
-     
+      <Footer />
     </div>
   );
 }
