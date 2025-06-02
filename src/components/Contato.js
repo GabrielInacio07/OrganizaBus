@@ -9,7 +9,7 @@ export default function ContatoPage() {
   return (
     <section
       ref={ref}
-      className="bg-gray-200 py-16 px-6 md:px-12 lg:px-24 overflow-hidden"
+      className="px-8 py-20 bg-gray-100 text-center overflow-hidden"
     >
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -18,7 +18,7 @@ export default function ContatoPage() {
         className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
       >
         <div>
-          <h2 className="text-4xl font-bold text-blue-900 mb-4">Fale com a gente</h2>
+          <h2 className="text-4xl font-bold text-[#0f1f4b] mb-4">Fale com a gente</h2>
           <p className="text-gray-600 text-lg mb-6">
             Tem dúvidas, sugestões ou precisa de suporte? Envie uma mensagem e responderemos o quanto antes.
           </p>

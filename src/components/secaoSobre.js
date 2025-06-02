@@ -10,7 +10,7 @@ export default function AboutSection() {
   });
 
   return (
-    <div className="px-6 py-16 bg-gray-200 text-center overflow-hidden">
+    <div className="px-8 py-20 bg-gray-100 text-center overflow-hidden">
       <motion.section
         ref={ref}
         initial={{ opacity: 0, y: 30 }}
@@ -24,7 +24,7 @@ export default function AboutSection() {
         className="max-w-3xl mx-auto"
       >
         <motion.h2
-          className="text-4xl font-bold mb-6 text-[#1E3A8A]"
+          className="text-4xl font-bold mb-6 text-[#0f1f4b]"
           initial={{ opacity: 0, y: 10 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
           transition={{ duration: 0.6, ease: [0.16, 0.77, 0.47, 0.97] }}
