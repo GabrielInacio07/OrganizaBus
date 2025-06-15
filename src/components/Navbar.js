@@ -18,7 +18,7 @@ export default function Navbar() {
         className="object-contain"
       />
     </Link>
-    <div className="w-full flex justify-center md:justify-end">
+    <div className="w-full flex justify-end">
       <button
         type="button"
         className="bg-green-400 hover:bg-green-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300"

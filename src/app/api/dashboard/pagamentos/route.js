@@ -24,11 +24,23 @@ export async function GET(req) {
     let nao_gerado = 0;
     let total_aprovado = 0;
 
+    const anoAtual = new Date().getUTCFullYear();
+
     for (const aluno of alunos) {
+      console.log(`📌 Pagamentos do aluno ${aluno.nome} (ID: ${aluno.id}):`);
+
+      for (const p of aluno.pagamentos) {
+        console.log(`  → ID: ${p.id}, criadoEm: ${p.criadoEm}, status: ${p.status}`);
+      }
+
       const pagamentosDoMes = aluno.pagamentos.filter((p) => {
         if (!p.criadoEm) return false;
         const data = new Date(p.criadoEm);
-        return data.getMonth() + 1 === mes;
+        console.log(`  🕓 Data convertida: ${data}, mês: ${data.getUTCMonth() + 1}, ano: ${data.getUTCFullYear()}`);
+        return (
+          data.getUTCMonth() + 1 === mes &&
+          data.getUTCFullYear() === anoAtual
+        );
       });
 
       if (pagamentosDoMes.length === 0) {
@@ -57,7 +69,7 @@ export async function GET(req) {
     });
 
   } catch (error) {
-    console.error("Erro na API de dashboard:", error);
+    console.error("❌ Erro na API de dashboard:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

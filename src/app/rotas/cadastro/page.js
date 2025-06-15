@@ -110,9 +110,7 @@ export default function CadastroPage() {
   return (
     <div
       className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-        isLightMode
-          ? "bg-white"
-          : "bg-[#0f1f4b]"
+        isLightMode ? "bg-white" : "bg-[#0f1f4b]"
       }`}
     >
       <div className="absolute top-5 right-5 z-10">
@@ -122,7 +120,7 @@ export default function CadastroPage() {
         />
       </div>
 
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-6 px-4 sm:px-6 lg:px-8 max-w-[700px] w-full">
         <div
           className={`text-center text-sm ${
             isLightMode ? "text-gray-800" : "text-white"
@@ -138,72 +136,60 @@ export default function CadastroPage() {
         </div>
 
         <form
-          onSubmit={handleSubmit}
-          className={`flex flex-col items-center gap-4 w-[clamp(320px,40vw,480px)] p-12 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 bg-white`}
-        >
+  onSubmit={handleSubmit}
+  className={`flex flex-col items-center gap-4 w-[94vw] md:w-[clamp(320px,40vw,500px)] p-12 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 bg-white`}
+>
           <h1 className="text-3xl mb-4 font-semibold text-gray-900">
             Criar Conta
           </h1>
 
-          {[
-            { icon: faUser, name: "name", placeholder: "Nome" },
-            { icon: faEnvelope, name: "email", placeholder: "Email", type: "email" },
-            { icon: faPhone, name: "telefone", placeholder: "Telefone", maxLength: 15 },
-            { icon: faIdCard, name: "cpf", placeholder: "CPF", maxLength: 14 },
-          ].map(({ icon, ...input }) => (
-            <div
-              key={input.name}
-              className="flex items-center px-4 py-2 rounded-xl w-full h-12 shadow-inner gap-2 bg-gray-100 text-gray-900"
-            >
-              <FontAwesomeIcon icon={icon} className="text-lg" />
-              <input
-                {...input}
-                type={input.type || "text"}
-                value={formData[input.name]}
-                onChange={(e) => handleFormEdit(e, input.name)}
-                className="bg-transparent outline-none w-full placeholder-gray-500"
-                required
-              />
-            </div>
-          ))}
+        {[
+  { icon: faUser, name: "name", placeholder: "Nome" },
+  { icon: faEnvelope, name: "email", placeholder: "Email", type: "email" },
+  { icon: faPhone, name: "telefone", placeholder: "Telefone", maxLength: 15 },
+  { icon: faIdCard, name: "cpf", placeholder: "CPF", maxLength: 14 },
+].map(({ icon, ...input }) => (
+  <div
+    key={input.name}
+    className="flex items-center px-4 py-2 rounded-xl w-full h-16 md:h-12 shadow-inner gap-2 bg-gray-100 text-gray-900"
+  >
+    <FontAwesomeIcon icon={icon} className="text-lg" />
+    <input
+      {...input}
+      type={input.type || "text"}
+      value={formData[input.name]}
+      onChange={(e) => handleFormEdit(e, input.name)}
+      className="bg-transparent outline-none w-full placeholder-gray-500"
+      required
+    />
+  </div>
+))}
 
-          {fieldErrors.telefone && (
-            <p className="text-red-500 text-sm w-full">{fieldErrors.telefone}</p>
-          )}
-          {fieldErrors.cpf && (
-            <p className="text-red-500 text-sm w-full">{fieldErrors.cpf}</p>
-          )}
-
-          {[["password", "Senha"], ["confirmPassword", "Repita a senha"]].map(
-            ([field, placeholder], i) => (
-              <div
-                key={field}
-                className="relative flex items-center px-4 py-2 rounded-xl w-full h-12 shadow-inner gap-2 bg-gray-100 text-gray-900"
-              >
-                <FontAwesomeIcon icon={faLock} className="text-lg" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder={placeholder}
-                  value={formData[field]}
-                  onChange={(e) => handleFormEdit(e, field)}
-                  className="bg-transparent outline-none w-full placeholder-gray-500"
-                  required
-                />
-                <span
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-600"
-                >
-                  <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
-                </span>
-              </div>
-            )
-          )}
-
-          {error && (
-            <div className="w-full p-2 rounded-md text-sm text-center bg-red-100 text-red-700">
-              {error}
-            </div>
-          )}
+{/* Inputs de senha */}
+{[["password", "Senha"], ["confirmPassword", "Repita a senha"]].map(
+  ([field, placeholder]) => (
+    <div
+      key={field}
+      className="relative flex items-center px-4 py-2 rounded-xl w-full h-16 md:h-12 shadow-inner gap-2 bg-gray-100 text-gray-900"
+    >
+      <FontAwesomeIcon icon={faLock} className="text-lg" />
+      <input
+        type={showPassword ? "text" : "password"}
+        placeholder={placeholder}
+        value={formData[field]}
+        onChange={(e) => handleFormEdit(e, field)}
+        className="bg-transparent outline-none w-full placeholder-gray-500"
+        required
+      />
+      <span
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-600"
+      >
+        <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
+      </span>
+    </div>
+  )
+)}
 
           <button
             type="submit"
@@ -211,7 +197,8 @@ export default function CadastroPage() {
           >
             Cadastrar
           </button>
-           <Link
+
+          <Link
             href="/rotas/login"
             className="text-sm text-blue-500 hover:underline mt-2 text-center w-full"
           >

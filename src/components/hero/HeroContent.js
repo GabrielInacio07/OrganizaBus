@@ -8,16 +8,16 @@ export default function HeroContent() {
   };
 
   return (
-   <main className="flex flex-col-reverse md:flex-row items-center justify-between min-h-[80vh] w-full px-8 py-16 gap-10 bg-[#0f1f4b]">
+   <main className="flex flex-col-reverse md:flex-row items-center justify-between min-h-[70vh] md:min-h-[80vh] w-full px-8 py-20 gap-10 bg-[#0f1f4b] mb-4">
   <div className="flex-1 flex flex-col items-center md:items-start justify-center text-center md:text-left">
-    <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 text-white drop-shadow-md">
+    <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 text-white drop-shadow-md">
       <TypeAnimation
         sequence={[" Bem-vindo a OrganizaBus", 2000, ""]}
         speed={200}
         repeat={Infinity}
       />
     </h1>
-    <p className="text-lg sm:text-xl max-w-xl mb-10 text-[#D1FAE5] leading-relaxed drop-shadow-sm">
+    <p className="text-sm sm:text-2xl md:text-2xl max-w-xl mb-4 text-[#D1FAE5] leading-relaxed drop-shadow-sm">
       Uma solução completa e segura para gerenciar os pagamentos do seu transporte universitário.
     </p>
     <div className="w-full flex justify-center md:justify-start">
@@ -37,7 +37,7 @@ export default function HeroContent() {
       alt="OrganizaBus Screenshot"
       width={600}
       height={400}
-      className="w-full max-w-[700px] h-auto rounded-xl shadow-2xl"
+      className="mb-[-100px] md:mb-[0px] w-full max-w-[700px] h-auto rounded-xl shadow-2xl "
     />
   </div>
 </main>

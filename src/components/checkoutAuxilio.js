@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,7 +6,7 @@ import styles from "../styles/Botao.module.css";
 import { UserService } from "@/services/user.service";
 import { Button } from "@/components/ui/button";
 
-export default function CheckoutAuxilio({ title, price, quantity, onPaymentSuccess }) {
+export default function CheckoutAuxilio({ title = "Bolsa Estudantil", price, quantity, onPaymentSuccess }) {
   const [user, setUser] = useState(null);
   const [qrCodeBase64, setQrCodeBase64] = useState("");
   const [codigoPix, setCodigoPix] = useState("");
@@ -37,11 +38,12 @@ export default function CheckoutAuxilio({ title, price, quantity, onPaymentSucce
     }
 
     try {
-      const response = await fetch("/api/mp", {
+      const response = await fetch("/api/mp/pagamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
+          title: "Bolsa Estudantil",
+          tipo: "auxilio",
           price,
           quantity,
           payer: {
@@ -57,8 +59,8 @@ export default function CheckoutAuxilio({ title, price, quantity, onPaymentSucce
       if (data.qr_code_base64 && data.qr_code) {
         setQrCodeBase64(data.qr_code_base64);
         setCodigoPix(data.qr_code);
-        setTempoRestante(15 * 60 * 1000); // 15 minutos em milissegundos
-        if (onPaymentSuccess) onPaymentSuccess();
+        setTempoRestante(15 * 60 * 1000);
+        if (onPaymentSuccess) onPaymentSuccess("Bolsa Estudantil");
       }
     } catch (error) {
       console.error("Erro ao gerar Pix:", error);
@@ -80,7 +82,6 @@ export default function CheckoutAuxilio({ title, price, quantity, onPaymentSucce
       >
         Bolsa Estudantil
       </Button>
-
       {qrCodeBase64 && (
         <div style={{ marginTop: 20 }}>
           {tempoRestante !== null && tempoRestante > 0 ? (
@@ -106,6 +107,15 @@ export default function CheckoutAuxilio({ title, price, quantity, onPaymentSucce
             <strong>PIX Copia e Cola:</strong>
           </p>
           <textarea readOnly value={codigoPix} style={{ width: "100%" }} />
+          <Button
+            className="mt-2"
+            onClick={() => {
+              navigator.clipboard.writeText(codigoPix);
+              alert("Código Pix copiado para área de transferência.");
+            }}
+          >
+            Copiar código Pix
+          </Button>
         </div>
       )}
     </div>

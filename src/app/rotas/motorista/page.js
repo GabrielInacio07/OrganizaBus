@@ -23,6 +23,7 @@ import {
   LogOut,
 } from "lucide-react";
 import ResumoCard from "@/components/dashboard/ResumoCard";
+import Footer from "@/components/Footer";
 
 export default function Motorista() {
   const DashboardChart = dynamic(() => import("@/components/dashComponent"), {
@@ -44,8 +45,13 @@ export default function Motorista() {
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [data, setData] = useState([]);
   const [valorTotal, setValorTotal] = useState(0);
+  const [filtroStatus, setFiltroStatus] = useState("todos");
+
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().getMonth() + 1
+  );
+  const [anoSelecionado, setAnoSelecionado] = useState(
+    new Date().getFullYear()
   );
   const [carregandoDados, setCarregandoDados] = useState(false);
 
@@ -77,7 +83,6 @@ export default function Motorista() {
   };
 
   const carregarGrafico = async (id, mes = mesSelecionado) => {
-    console.log("🔁 carregando gráfico para:", { id, mes });
     setCarregandoDados(true);
 
     try {
@@ -90,30 +95,25 @@ export default function Motorista() {
       }
 
       const result = await res.json();
-      console.log("📊 dados recebidos:", result);
+
+      const naoPagosTotal =
+        (result.not_paid || 0) +
+        (result.pending || 0) +
+        (result.nao_gerado || 0);
 
       const novosData = [
         { name: "Pagos", value: result.approved || 0 },
-        { name: "Pendentes", value: result.pending || 0 },
-        { name: "Não pagos após prazo", value: result.not_paid || 0 },
-        { name: "Não gerados", value: result.nao_gerado || 0 },
+        { name: "Não Pagos", value: naoPagosTotal },
       ];
 
       setData(novosData);
       setValorTotal(result.total_aprovado || 0);
-
-      console.log("✅ Estado atualizado:", {
-        novosData,
-        valorTotal: result.total_aprovado,
-      });
     } catch (error) {
-      console.error("❌ Erro ao carregar dados do gráfico:", error);
-      // Resetar dados em caso de erro
+      console.error("Erro ao carregar dados do gráfico:", error);
       setData([
         { name: "Pagos", value: 0 },
-        { name: "Pendentes", value: 0 },
-        { name: "Não pagos após prazo", value: 0 },
-        { name: "Não gerados", value: 0 },
+        { name: "Não pagos ", value: 0 },
+        { name: "Não Pagos", value: 0 },
       ]);
       setValorTotal(0);
     } finally {
@@ -123,13 +123,14 @@ export default function Motorista() {
 
   const handleMesChange = async (e) => {
     const novoMes = parseInt(e.target.value);
-    console.log("📅 Mudando mês para:", novoMes);
     setMesSelecionado(novoMes);
-
-    // Forçar recarregamento imediato dos dados
     if (motorista && motorista.id) {
       await carregarGrafico(motorista.id, novoMes);
     }
+  };
+
+  const handleAnoChange = (e) => {
+    setAnoSelecionado(Number(e.target.value));
   };
 
   const handleChange = (e) => {
@@ -174,7 +175,6 @@ export default function Motorista() {
         await UserService.removerAluno(id);
         alert("Aluno removido com sucesso.");
         await carregarAlunos();
-        // Recarregar gráfico após remover aluno
         if (motorista && motorista.id) {
           await carregarGrafico(motorista.id, mesSelecionado);
         }
@@ -225,25 +225,26 @@ export default function Motorista() {
   if (!motoristaLogado) return <div>Verificando login...</div>;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          Dashboard do Motorista {motorista?.nome}
-        </h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/rotas/perfil-motorista")}
-            className="flex items-center gap-2"
-          >
-            <User size={16} />
-            Meu Perfil
-          </Button>
-          <div>
+    <>
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left">
+            Dashboard do Motorista {motorista?.nome}
+          </h1>
+
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/rotas/perfil-motorista")}
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              <User size={16} />
+              Meu Perfil
+            </Button>
+            {/* Botão para abrir o modal de cadastro de aluno */}
             <Dialog open={showModal} onOpenChange={setShowModal}>
               <DialogTrigger asChild>
-                <Button>
-                  {" "}
+                <Button className="flex items-center gap-2 whitespace-nowrap">
                   <UserRoundPlus size={16} />
                   Novo Aluno
                 </Button>
@@ -282,157 +283,222 @@ export default function Motorista() {
                 </form>
               </DialogContent>
             </Dialog>
+            {/* Botão para abrir o modal de edição de aluno */}
+            <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Editar Aluno</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleEditarAluno} className="grid gap-4 py-4">
+                  {["nome", "email", "telefone", "cpf", "faculdade"].map(
+                    (campo) => (
+                      <input
+                        key={campo}
+                        type={campo === "email" ? "email" : "text"}
+                        name={campo}
+                        value={formData[campo]}
+                        onChange={handleChange}
+                        placeholder={
+                          campo.charAt(0).toUpperCase() + campo.slice(1)
+                        }
+                        className="border p-2 rounded w-full"
+                        required
+                      />
+                    )
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowEditModal(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit">Salvar</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* Botão de logout */}
+            <Button
+              onClick={handleLogout}
+              variant="destructive"
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              <LogOut size={16} />
+              Sair
+            </Button>
           </div>
-          <Button variant="destructive" onClick={handleLogout}>
-            <LogOut size={16} />
-            Sair
-          </Button>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
+          <div className="w-full sm:w-1/2 lg:w-1/4">
+            <ResumoCard
+              title="Alunos"
+              icon={Users}
+              value={alunos.length}
+              color="bg-blue-500"
+            />
+          </div>
+          <div className="w-full sm:w-1/2 lg:w-1/4">
+            <ResumoCard
+              title="Pagos"
+              icon={CheckCircle}
+              value={data.find((d) => d.name === "Pagos")?.value || 0}
+              color="bg-green-500"
+            />
+          </div>
+          <div className="w-full sm:w-1/2 lg:w-1/4">
+            <ResumoCard
+              title="Não pagos"
+              icon={XCircle}
+              value={
+                data.find((d) => d.name === "Não pagos após prazo")?.value || 0
+              }
+              color="bg-red-500"
+            />
+          </div>
+        </div>
+        {/* Filtros de Mês e Ano */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <select
+            value={mesSelecionado}
+            onChange={handleMesChange}
+            className="border p-2 rounded w-full sm:w-auto"
+          >
+            {[
+              "Janeiro",
+              "Fevereiro",
+              "Março",
+              "Abril",
+              "Maio",
+              "Junho",
+              "Julho",
+              "Agosto",
+              "Setembro",
+              "Outubro",
+              "Novembro",
+              "Dezembro",
+            ].map((mes, index) => (
+              <option key={index + 1} value={index + 1}>
+                {mes}
+              </option>
+            ))}
+          </select>
+          <select
+            value={anoSelecionado}
+            onChange={handleAnoChange}
+            className="border p-2 rounded w-full sm:w-auto"
+          >
+            {Array.from(
+              { length: 5 },
+              (_, i) => new Date().getFullYear() - i
+            ).map((ano) => (
+              <option key={ano} value={ano}>
+                {ano}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Gráfico */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-10">
+          {carregandoDados ? (
+            <div className="text-center text-gray-500">
+              Carregando gráfico...
+            </div>
+          ) : (
+            <DashboardChart data={data} valorTotal={valorTotal} />
+          )}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <select
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="todos">Todos</option>
+            <option value="pago">Pagos</option>
+            <option value="nao-pago">Não pagos</option>
+          </select>
+        </div>
+
+        {/* Lista de Alunos */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-md mb-10">
+          <h2 className="text-xl font-semibold mb-4">Alunos Cadastrados</h2>
+
+          {alunos.length === 0 ? (
+            <p className="text-gray-500">Nenhum aluno encontrado.</p>
+          ) : (
+            <div className="space-y-4">
+              {alunos
+                .filter((aluno) => {
+                  if (filtroStatus === "todos") return true;
+
+                  const ultimoPix = aluno.pagamentos?.find(
+                    (p) => p.tipo === "mensalidade"
+                  );
+                  const ultimoAux = aluno.pagamentos?.find(
+                    (p) => p.tipo === "auxilio"
+                  );
+
+                  const estaPago = [ultimoPix, ultimoAux].some(
+                    (p) => p?.status === "approved"
+                  );
+
+                  return filtroStatus === "pago" ? estaPago : !estaPago;
+                })
+                .map((aluno) => {
+                  const ultimoPix = aluno.pagamentos?.find(
+                    (p) => p.tipo === "mensalidade"
+                  );
+                  const ultimoAux = aluno.pagamentos?.find(
+                    (p) => p.tipo === "auxilio"
+                  );
+
+                  return (
+                    <div
+                      key={aluno.id}
+                      className="border p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                    >
+                      <div>
+                        <p className="font-semibold">{aluno.nome}</p>
+                        <p className="text-sm text-gray-500">{aluno.email}</p>
+
+                        <div className="mt-2 space-y-1">
+                          <p>
+                            💰 <strong>Mensalidade:</strong>{" "}
+                            {ultimoPix?.status || "Não registrado"}
+                          </p>
+                          <p>
+                            🎓 <strong>Auxílio:</strong>{" "}
+                            {ultimoAux?.status || "Não registrado"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => abrirModalEdicao(aluno)}
+                          variant="outline"
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          onClick={() => handleRemoverAluno(aluno.id)}
+                          variant="destructive"
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <ResumoCard
-          titulo="Total de Alunos"
-          valor={alunos.length}
-          Icone={Users}
-          cor="text-blue-500"
-        />
-        <ResumoCard
-          titulo="Pagamentos Aprovados"
-          valor={data[0]?.value || 0}
-          Icone={CheckCircle}
-          cor="text-green-500"
-        />
-        <ResumoCard
-          titulo="Pendentes"
-          valor={data[1]?.value || 0}
-          Icone={Clock}
-          cor="text-yellow-500"
-        />
-        <ResumoCard
-          titulo="Não Gerados"
-          valor={data[3]?.value || 0}
-          Icone={XCircle}
-          cor="text-gray-400"
-        />
-        <ResumoCard
-          titulo="Total Recebido"
-          valor={`R$ ${valorTotal.toLocaleString("pt-BR", {
-            minimumFractionDigits: 2,
-          })}`}
-          Icone={DollarSign}
-          cor="text-emerald-600"
-        />
-      </div>
-      <div className="mb-6">
-        <label className="text-sm font-medium mr-2">Filtrar por mês:</label>
-        <select
-          value={mesSelecionado}
-          onChange={handleMesChange}
-          className="border px-3 py-1 rounded"
-          disabled={carregandoDados}
-        >
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => (
-            <option key={mes} value={mes}>
-              {new Date(0, mes - 1).toLocaleString("pt-BR", { month: "long" })}
-            </option>
-          ))}
-        </select>
-        {carregandoDados && (
-          <span className="ml-2 text-sm text-gray-500">Carregando...</span>
-        )}
-      </div>
-      <DashboardChart
-        data={data}
-        motoristaId={motorista?.id}
-        mesSelecionado={mesSelecionado}
-      />
-
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Editar Aluno</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditarAluno} className="grid gap-4 py-4">
-            {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
-              <input
-                key={campo}
-                type={campo === "email" ? "email" : "text"}
-                name={campo}
-                value={formData[campo]}
-                onChange={handleChange}
-                placeholder={campo.charAt(0).toUpperCase() + campo.slice(1)}
-                className="border p-2 rounded w-full"
-                required
-              />
-            ))}
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <h2 className="text-xl font-semibold mt-12 mb-2">Alunos Cadastrados</h2>
-      <div className="rounded-md border overflow-x-auto">
-        <table className="w-full table-auto text-sm">
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-4 py-2 text-left">Nome</th>
-              <th className="px-4 py-2 text-left">Email</th>
-              <th className="px-4 py-2 text-left">Faculdade</th>
-              <th className="px-4 py-2 text-left">Telefone</th>
-              <th className="px-4 py-2 text-left">Pix</th>
-              <th className="px-4 py-2 text-left">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {alunos.map((aluno) => (
-              <tr key={aluno.id} className="border-t">
-                <td className="px-4 py-2">{aluno.nome}</td>
-                <td className="px-4 py-2">{aluno.email}</td>
-                <td className="px-4 py-2">{aluno.faculdade}</td>
-                <td className="px-4 py-2">{aluno.telefone}</td>
-                <td className="px-4 py-2">
-                  {aluno.pagamentos?.length
-                    ? aluno.pagamentos.map((p) => (
-                        <div key={p.id}>
-                          <strong>{p.titulo}</strong>:{" "}
-                          {p.status === "approved" ? "Pago" : "Pendente"}
-                        </div>
-                      ))
-                    : "Não gerado"}
-                </td>
-                <td className="px-4 py-2 space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => abrirModalEdicao(aluno)}
-                    className="bg-blue-500 text-white hover:bg-blue-600 hover:text-white"
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoverAluno(aluno.id)}
-                    className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
-                  >
-                    Remover
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <Footer />
+    </>
   );
 }

@@ -1,21 +1,12 @@
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default function ResumoCard({ titulo, valor, Icone, cor }) {
+export default function ResumoCard({ title, icon: Icon, value, color }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {titulo}
-        </CardTitle>
-        <Icone className={`h-5 w-5 ${cor}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{valor}</div>
+    <Card className={`text-white ${color} shadow-lg rounded-xl`}>
+      <CardContent className="flex flex-col items-center p-4">
+        <Icon size={32} />
+        <h2 className="text-lg font-bold mt-2">{title}</h2>
+        <p className="text-2xl font-semibold">{value}</p>
       </CardContent>
     </Card>
   );

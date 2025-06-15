@@ -9,6 +9,9 @@ export async function POST(req) {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD,
     },
+    tls:{
+      rejectUnauthorized: false // Permite conexões TLS não verificadas
+    }
   });
 
   try {

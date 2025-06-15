@@ -1,4 +1,4 @@
-// /api/pagamento/route.ts
+// /api/pagamento/route.js
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import mercadopago from "mercadopago";
@@ -11,7 +11,7 @@ mercadopago.configure({
 
 export async function POST(req) {
   try {
-    const { title, price, quantity, payer, userId } = await req.json();
+    const { title, price, quantity, payer, userId,tipo } = await req.json();
 
     const payment_data = {
       transaction_amount: price,
@@ -35,11 +35,11 @@ export async function POST(req) {
         quantidade: quantity,
         status: payment.body.status,
         qr_code: transacao.qr_code,
-        qr_code_base64: transacao.qr_code_base64,
         codigo_pix: transacao.qr_code,
         pagamentoId: String(payment.body.id),
         alunoId: userId,
         expiraEm: new Date(Date.now() + 15 * 60 * 1000),
+        tipo: tipo
       },
     });
 

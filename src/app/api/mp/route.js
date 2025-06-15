@@ -45,7 +45,6 @@ export async function POST(req) {
       where: { id: userId },
       data: {
         statusPagamento: "gerado",
-        codigoPix: payment.body.point_of_interaction.transaction_data.qr_code,
       },
     });
 

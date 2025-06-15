@@ -158,18 +158,29 @@ Equipe OrganizaBus`,
   },
 
   // Suporte para lista e remoção de alunos
-async listarAlunos() {
+
+  async listarAlunos({ mes, ano } = {}) {
+    const user = this.getCurrentUser();
+    if (!user?.id) throw new Error('Usuário não encontrado');
+
+    const query = new URLSearchParams({ motoristaId: user.id });
+    if (mes) query.append('mes', mes);
+    if (ano) query.append('ano', ano);
+
+    const res = await fetch(`/api/alunos?${query.toString()}`);
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || 'Erro ao buscar alunos');
+    }
+    return res.json();
+  },
+ buscarAluno(){
   const user = this.getCurrentUser();
-  if (!user?.id) throw new Error('Usuário não encontrado');
-
-  const res = await fetch(`/api/alunos?motoristaId=${user.id}`);
-  if (!res.ok) {
-    const erro = await res.json().catch(() => ({}));
-    throw new Error(erro?.erro || 'Erro ao buscar alunos');
+  if(!user || user.tipo !== 'aluno'){
+    throw new Error('Usuário não é um aluno ou nao esta autenticado');
   }
-  return res.json();
-},
-
+  return Promise.resolve({data: user});
+ },
 async removerAluno(id) {
   const res = await fetch('/api/alunos', {
     method: 'DELETE',

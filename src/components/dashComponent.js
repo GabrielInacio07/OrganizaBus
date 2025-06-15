@@ -3,20 +3,18 @@ import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { UserService } from "@/services/user.service";
 
-const COLORS = ["#22c55e", "#eab308", "#ef4444", "#9ca3af"];
+const COLORS = ["#22c55e", "#ef4444"]; // Verde para Pagos, Vermelho para Não Pagos
 
 export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Se dados foram passados como props, usar eles
     if (data && data.length > 0) {
       setChartData(data);
       return;
     }
 
-    // Caso contrário, buscar os dados da API (fallback)
     if (motoristaId && mesSelecionado) {
       fetchPagamentos();
     }
@@ -26,24 +24,39 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
     setLoading(true);
     try {
       const motorista = UserService.getCurrentUser();
-      if (!motorista || !motorista.id) return;
+      if (!motorista || !motorista.id) {
+        console.warn("Motorista não autenticado ou inválido");
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
 
       const mes = mesSelecionado || new Date().getMonth() + 1;
       const res = await fetch(`/api/dashboard/pagamentos?motoristaId=${motorista.id}&mes=${mes}`);
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const result = await res.json();
-      
+
+      console.log("Dados recebidos do backend:", result);
+
+      // Extrai os valores e previne NaN ou undefined
+      const approvedCount = Number(result.approved ?? 0);
+      const notPaidCount = Number(result.not_paid ?? 0);
+      const pendingCount = Number(result.pending ?? 0);
+      const naoGeradoCount = Number(result.nao_gerado ?? 0);
+
+      const naoPagosTotal = notPaidCount + pendingCount + naoGeradoCount;
+
+      console.log("Pagos:", approvedCount, "Não Pagos (incluindo não gerado):", naoPagosTotal);
+
       const formattedData = [
-        { name: "Pagos", value: result.approved || 0 },
-        { name: "Pendentes", value: result.pending || 0 },
-        { name: "Não pagos após prazo", value: result.not_paid || 0 },
-        { name: "Não gerados", value: result.nao_gerado || 0 },
+        { name: "Pagos", value: approvedCount },
+        { name: "Não Pagos", value: naoPagosTotal },
       ];
-      
+
       setChartData(formattedData);
     } catch (error) {
       console.error("Erro ao buscar dados do gráfico:", error);
@@ -55,18 +68,18 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     if (percent === 0) return null;
-    
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         fontSize="12"
         fontWeight="bold"
@@ -87,7 +100,7 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
     );
   }
 
-  const hasData = chartData.some(item => item.value > 0);
+  const hasData = chartData.some((item) => item.value > 0);
 
   if (!hasData) {
     return (
@@ -119,18 +132,24 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip 
-            formatter={(value, name) => [value, name]}
-            labelStyle={{ color: '#333' }}
-          />
-          <Legend 
-            verticalAlign="bottom" 
+          <Tooltip formatter={(value, name) => [value, name]} labelStyle={{ color: "#333" }} />
+          <Legend
+            verticalAlign="bottom"
             height={36}
-            formatter={(value, entry) => (
-              <span style={{ color: entry.color, fontWeight: 'bold' }}>
-                {value}: {entry.payload.value}
-              </span>
-            )}
+            payload={[
+              {
+                id: "Pagos",
+                type: "square",
+                value: `Pagos: ${chartData.find((d) => d.name === "Pagos")?.value || 0}`,
+                color: COLORS[0],
+              },
+              {
+                id: "Não Pagos",
+                type: "square",
+                value: `Não Pagos: ${chartData.find((d) => d.name === "Não Pagos")?.value || 0}`,
+                color: COLORS[1],
+              },
+            ]}
           />
         </PieChart>
       </ResponsiveContainer>

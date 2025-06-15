@@ -1,10 +1,7 @@
 
-
 generator client {
-  provider = "prisma-client-js" // ✅ sem "output"
+  provider = "prisma-client-js"
 }
-
-
 
 datasource db {
   provider = "mysql"
@@ -19,7 +16,7 @@ model User {
   cpf       String @unique
   senha     String
   tipo      String
-  alunos   Aluno[]
+  alunos    Aluno[]
 }
 
 model Aluno {
@@ -34,8 +31,7 @@ model Aluno {
   motoristaId      Int
   motorista        User       @relation(fields: [motoristaId], references: [id])
   pagamentos       Pagamento[]
-  statusPagamento  String     @default("não gerado") 
-  codigoPix        String?                             
+  statusPagamento  String     @default("não gerado")
 }
 
 model Pagamento {
@@ -47,9 +43,9 @@ model Pagamento {
   status           String
   qr_code          String
   codigo_pix       String
-  pagamentoId      String
+  pagamentoId      String   @unique
   criadoEm         DateTime @default(now())
-  expiraEm       DateTime
-  alunoId          Int?
-  aluno            Aluno?   @relation(fields: [alunoId], references: [id])
+  expiraEm         DateTime
+  alunoId          Int
+  aluno            Aluno    @relation(fields: [alunoId], references: [id])
 }

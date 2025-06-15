@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import { UserService } from "@/services/user.service";
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -17,8 +26,10 @@ export default function GraficoMensal({ ano }) {
 
       const dadosFormatados = valores.map((valor, i) => ({
         mes: MESES[i],
-        valor,
+        valor: Number(valor), // garante tipo numérico
       }));
+
+      console.log(dadosFormatados); // debug
 
       setDados(dadosFormatados);
     };
@@ -35,7 +46,14 @@ export default function GraficoMensal({ ano }) {
           <XAxis dataKey="mes" />
           <YAxis />
           <Tooltip formatter={(value) => `R$ ${value.toFixed(2)}`} />
-          <Bar dataKey="valor" fill="#4caf50" />
+          <Bar dataKey="valor">
+            {dados.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.valor > 0 ? "#4caf50" : "#f44336"}
+              />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
