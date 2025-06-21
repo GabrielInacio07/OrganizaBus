@@ -37,6 +37,9 @@ export default function Motorista() {
     telefone: "",
     cpf: "",
     faculdade: "",
+    valorMensalidade: "",
+    possuiBolsa: false,
+    valorBolsa: "",
   });
   const [alunos, setAlunos] = useState([]);
   const [motoristaLogado, setMotoristaLogado] = useState(false);
@@ -134,8 +137,11 @@ export default function Motorista() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const abrirModalEdicao = (aluno) => {
@@ -146,6 +152,9 @@ export default function Motorista() {
       telefone: aluno.telefone || "",
       cpf: aluno.cpf || "",
       faculdade: aluno.faculdade || "",
+      valorMensalidade: aluno.valorMensalidade || "",
+      possuiBolsa: aluno.possuiBolsa || false,
+      valorBolsa: aluno.valorBolsa || "",
     });
     setShowEditModal(true);
   };
@@ -188,6 +197,11 @@ export default function Motorista() {
     e.preventDefault();
     try {
       const senhaAleatoria = Math.random().toString(36).slice(-8);
+      const valorMensalidade = parseFloat(formData.valorMensalidade || 0);
+      const valorBolsa = formData.possuiBolsa
+        ? parseFloat(formData.valorBolsa || 0)
+        : null;
+
       const novoAluno = await UserService.registrarAluno(
         formData.nome,
         formData.email,
@@ -195,8 +209,12 @@ export default function Motorista() {
         formData.cpf,
         senhaAleatoria,
         formData.faculdade,
-        motorista.id
+        motorista.id,
+        valorMensalidade,
+        formData.possuiBolsa,
+        valorBolsa
       );
+
       await UserService.enviarSenhaPorEmail(formData.email, senhaAleatoria);
       Swal.fire(
         "Sucesso!",
@@ -209,11 +227,14 @@ export default function Motorista() {
         telefone: "",
         cpf: "",
         faculdade: "",
+        valorMensalidade: "",
+        possuiBolsa: false,
+        valorBolsa: "",
       });
       setShowModal(false);
       carregarAlunos();
     } catch (error) {
-      alert(error.message);
+      alert(error?.message || "Erro ao cadastrar aluno.");
     }
   };
 
@@ -270,6 +291,39 @@ export default function Motorista() {
                       />
                     )
                   )}
+
+                  <input
+                    type="number"
+                    name="valorMensalidade"
+                    value={formData.valorMensalidade || ""}
+                    onChange={handleChange}
+                    placeholder="Valor da Mensalidade (R$)"
+                    className="border p-2 rounded w-full"
+                    required
+                  />
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="possuiBolsa"
+                      checked={formData.possuiBolsa || false}
+                      onChange={handleChange}
+                    />
+                    Possui bolsa de estudos?
+                  </label>
+
+                  {formData.possuiBolsa && (
+                    <input
+                      type="number"
+                      name="valorBolsa"
+                      value={formData.valorBolsa || ""}
+                      onChange={handleChange}
+                      placeholder="Valor da Bolsa (R$)"
+                      className="border p-2 rounded w-full"
+                      required
+                    />
+                  )}
+
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
@@ -352,9 +406,7 @@ export default function Motorista() {
             <ResumoCard
               title="Não pagos"
               icon={XCircle}
-              value={
-                data.find((d) => d.name === "Não pagos após prazo")?.value || 0
-              }
+              value={data.find((d) => d.name === "Não Pagos")?.value || 0}
               color="bg-red-500"
             />
           </div>

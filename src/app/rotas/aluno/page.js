@@ -11,33 +11,42 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 
 export default function PaginaAluno() {
-  const [aluno, setAluno] = useState(null);
-  const router = useRouter();
+ const [aluno, setAluno] = useState(null);
+const router = useRouter();
 
-  useEffect(() => {
-    const fetchAluno = async () => {
-      try {
-        const response = await UserService.buscarAluno();
-        setAluno(response.data);
-      } catch (error) {
-        console.error("Erro ao buscar dados do aluno:", error);
-      }
-    };
-    fetchAluno();
-  }, []);
-
-  const handleLogout = () => {
-    UserService.logout();
-    router.push("/rotas/login");
+useEffect(() => {
+  const fetchAluno = async () => {
+    try {
+      const response = await UserService.buscarAluno();
+      console.log("ALUNO RECEBIDO:", response.data); // <= adicione isso
+      setAluno(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar dados do aluno:", error);
+    }
   };
+  fetchAluno();
+}, []);
 
-  if (!aluno) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto text-center">
-        <h1 className="text-2xl font-semibold text-gray-700 dark:text-gray-200">Carregando dados do aluno...</h1>
-      </div>
-    );
-  }
+const handleLogout = () => {
+  UserService.logout();
+  router.push("/rotas/login");
+};
+
+if (!aluno) {
+  return (
+    <div className="p-6 max-w-4xl mx-auto text-center">
+      <h1 className="text-2xl font-semibold text-gray-700 dark:text-gray-200">
+        Carregando dados do aluno...
+      </h1>
+    </div>
+  );
+}
+
+// mover para cá
+const valorMensalidade = parseFloat(aluno.valorMensalidade || 0);
+const valorBolsa = aluno.possuiBolsa && aluno.valorBolsa ? parseFloat(aluno.valorBolsa) : 0;
+const valorFinalMensalidade = valorMensalidade - valorBolsa;
+console.log('Aluno:', aluno);
 
   return (
     <>
@@ -48,7 +57,10 @@ export default function PaginaAluno() {
           </h1>
 
           <div className="flex justify-center gap-4 flex-wrap">
-            <Button onClick={() => router.push("/rotas/aluno/perfil-aluno")} className="gap-2">
+            <Button
+              onClick={() => router.push("/rotas/aluno/perfil-aluno")}
+              className="gap-2"
+            >
               <User size={18} />
               Acessar Perfil
             </Button>
@@ -56,8 +68,20 @@ export default function PaginaAluno() {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6 mt-6">
-            <CheckoutAuxilio title="Bolsa-Estudantil" price={0.1} quantity={1} alunoId={aluno.id} />
-            <CheckoutPagar title="Pagamento do Aluno" price={0.1} quantity={1} />
+            {aluno.possuiBolsa  && (
+              <CheckoutAuxilio
+                title="Bolsa-Estudantil"
+                price={aluno.valorBolsa}
+                quantity={1}
+                alunoId={aluno.id}
+              />
+            )}
+
+            <CheckoutPagar
+              title="Pagamento do Aluno"
+              price={valorFinalMensalidade}
+              quantity={1}
+            />
           </div>
         </div>
       </main>

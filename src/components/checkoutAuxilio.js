@@ -80,7 +80,7 @@ export default function CheckoutAuxilio({ title = "Bolsa Estudantil", price, qua
         onClick={handlePayment}
         disabled={!user}
       >
-        Bolsa Estudantil
+        Bolsa Estudantil - R${price?.toFixed(2)}
       </Button>
       {qrCodeBase64 && (
         <div style={{ marginTop: 20 }}>

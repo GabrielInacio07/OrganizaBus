@@ -90,25 +90,25 @@ export default function CheckoutPagar({ title = "Pagamento do Aluno", price, qua
   return (
     <>
       <Button onClick={handlePayment} disabled={!user}>
-        Pagar com PIX
+        Pagar com PIX - R${price?.toFixed(2)}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg sm:mx-auto p-6 rounded-lg bg-white dark:bg-gray-900">
-          <DialogHeader>
-            <DialogTitle>Pagamento PIX - {title}</DialogTitle>
-            <DialogDescription>
-              {tempoRestante !== null && tempoRestante > 0 ? (
-                <div className="text-red-600 mb-2">
-                  Código Pix expira em: {formatarTempo(tempoRestante)}
-                </div>
-              ) : (
-                <Button variant="outline" onClick={handlePayment} className="mb-4">
-                  Gerar Novo Pix
-                </Button>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+         <DialogHeader>
+  <DialogTitle>Pagamento PIX - {title}</DialogTitle>
+</DialogHeader>
+
+{tempoRestante !== null && tempoRestante > 0 ? (
+  <div className="text-red-600 mb-2">
+    Código Pix expira em: {formatarTempo(tempoRestante)}
+  </div>
+) : (
+  <Button variant="outline" onClick={handlePayment} className="mb-4">
+    Gerar Novo Pix
+  </Button>
+)}
+
 
           {qrCodeBase64 && (
             <div className="flex flex-col items-center gap-4">
@@ -117,7 +117,7 @@ export default function CheckoutPagar({ title = "Pagamento do Aluno", price, qua
                 src={`data:image/png;base64,${qrCodeBase64}`}
                 alt="QR Code PIX"
               />
-              <div className="font-semibold">PIX Copia e Cola:</div>
+              <div className="font-semibold">PIX Copia e Cola (R$ {price?.toFixed(2)}):</div>
               <Button
                 variant="secondary"
                 onClick={() => {

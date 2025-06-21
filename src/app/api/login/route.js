@@ -6,26 +6,39 @@ export async function POST(request) {
   try {
     const { email, senha } = await request.json();
 
-    // Primeiro tenta na tabela 'user' (motorista)
+    // Tenta encontrar como motorista
     let usuario = await prisma.user.findUnique({ where: { email } });
 
-    // Se não encontrar, tenta na tabela 'aluno'
+    // Se não for motorista, tenta encontrar como aluno (já incluindo os campos extras)
     if (!usuario) {
-      usuario = await prisma.aluno.findUnique({ where: { email } });
+      usuario = await prisma.aluno.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          telefone: true,
+          cpf: true,
+          tipo: true,
+          senha: true,
+          valorMensalidade: true,
+          valorBolsa: true,
+          possuiBolsa: true,
+        },
+      });
     }
 
+    // Se ainda não encontrou
     if (!usuario) {
       return NextResponse.json({ erro: 'Email ou senha inválidos' }, { status: 401 });
     }
 
-    // Verificar senha - aceita tanto texto simples quanto hash (para migração)
+    // Verifica a senha (hash ou texto plano)
     let senhaCorreta = false;
-    
-    // Se a senha no banco começa com $2, é um hash bcrypt
+
     if (usuario.senha.startsWith('$2')) {
       senhaCorreta = await bcrypt.compare(senha, usuario.senha);
     } else {
-      // Senão, compara como texto simples (para senhas antigas)
       senhaCorreta = senha === usuario.senha;
     }
 
@@ -33,14 +46,24 @@ export async function POST(request) {
       return NextResponse.json({ erro: 'Email ou senha inválidos' }, { status: 401 });
     }
 
-    return NextResponse.json({
+    // Monta resposta comum
+    const retorno = {
       id: usuario.id,
       nome: usuario.nome,
       email: usuario.email,
       telefone: usuario.telefone,
       cpf: usuario.cpf,
       tipo: usuario.tipo?.toUpperCase() || 'ALUNO',
-    });
+    };
+
+    // Se for aluno, adiciona campos financeiros
+    if (usuario.tipo?.toLowerCase() === 'aluno' || usuario.valorMensalidade !== undefined) {
+      retorno.valorMensalidade = usuario.valorMensalidade || 0;
+      retorno.valorBolsa = usuario.valorBolsa || 0;
+      retorno.possuiBolsa = usuario.possuiBolsa === true;
+    }
+
+    return NextResponse.json(retorno);
   } catch (error) {
     console.error('Erro no login:', error);
     return NextResponse.json({ erro: 'Erro no servidor' }, { status: 500 });

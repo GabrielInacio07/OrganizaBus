@@ -12,7 +12,7 @@ export const UserService = {
   },
 
   // ALUNO
- async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId) {
+async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId, valorMensalidade, possuiBolsa, valorBolsa) {
   const res = await fetch(`${base}/registrarAluno`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,11 +25,15 @@ export const UserService = {
       faculdade,
       tipo: 'aluno',
       motoristaId,
+      valorMensalidade,
+      possuiBolsa,
+      valorBolsa,
       statusPagamento: 'não gerado'
     }),
   });
   return res.json();
 },
+
 
   async enviarSenhaPorEmail(email, senha) {
     try {
@@ -96,7 +100,10 @@ Equipe OrganizaBus`,
 
   getCurrentUser() {
     const user = localStorage.getItem('usuario');
-    return user ? JSON.parse(user) : null;
+    if (!user) return null;
+    const parsed = JSON.parse(user);
+    parsed.possuiBolsa = parsed.possuiBolsa === true || parsed.possuiBolsa === 'true'; 
+    return parsed;
   },
 
   logout() {
@@ -174,13 +181,24 @@ Equipe OrganizaBus`,
     }
     return res.json();
   },
- buscarAluno(){
+ buscarAluno() {
   const user = this.getCurrentUser();
-  if(!user || user.tipo !== 'aluno'){
-    throw new Error('Usuário não é um aluno ou nao esta autenticado');
+
+  if (!user || user.tipo !== 'aluno') {
+    throw new Error('Usuário não é um aluno ou não está autenticado');
   }
-  return Promise.resolve({data: user});
- },
+
+  // Corrigir possíveis valores incorretos salvos como string
+  user.possuiBolsa = user.possuiBolsa === true || user.possuiBolsa === "true";
+  user.valorMensalidade = parseFloat(user.valorMensalidade || 0);
+  user.valorBolsa =
+    user.valorBolsa !== null && user.valorBolsa !== undefined
+      ? parseFloat(user.valorBolsa)
+      : 0;
+
+  return Promise.resolve({ data: user });
+},
+
 async removerAluno(id) {
   const res = await fetch('/api/alunos', {
     method: 'DELETE',

@@ -28,6 +28,9 @@ model Aluno {
   senha            String
   tipo             String
   faculdade        String
+  possuiBolsa     Boolean @default(false)
+  valorMensalidade Float
+  valorBolsa     Float?
   motoristaId      Int
   motorista        User       @relation(fields: [motoristaId], references: [id])
   pagamentos       Pagamento[]
