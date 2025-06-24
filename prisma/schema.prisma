@@ -17,6 +17,7 @@ model User {
   senha     String
   tipo      String
   alunos    Aluno[]
+  valorMensalidade Float?
 }
 
 model Aluno {
@@ -35,6 +36,8 @@ model Aluno {
   motorista        User       @relation(fields: [motoristaId], references: [id])
   pagamentos       Pagamento[]
   statusPagamento  String     @default("não gerado")
+  criadoEm         DateTime   @default(now())
+  atualizadoEm     DateTime   @updatedAt
 }
 
 model Pagamento {
@@ -44,8 +47,8 @@ model Pagamento {
   valor            Decimal
   quantidade       Int
   status           String
-  qr_code          String
-  codigo_pix       String
+  qr_code          String?
+  codigo_pix       String?
   pagamentoId      String   @unique
   criadoEm         DateTime @default(now())
   expiraEm         DateTime

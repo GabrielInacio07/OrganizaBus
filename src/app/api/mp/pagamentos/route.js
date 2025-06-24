@@ -1,9 +1,12 @@
-// /api/pagamento/route.js
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import mercadopago from "mercadopago";
 
 const prisma = new PrismaClient();
+
+if (!process.env.CHAVE) {
+  throw new Error("MERCADO_PAGO_ACCESS_TOKEN não está definido no .env.local");
+}
 
 mercadopago.configure({
   access_token: process.env.CHAVE,
@@ -11,7 +14,52 @@ mercadopago.configure({
 
 export async function POST(req) {
   try {
-    const { title, price, quantity, payer, userId,tipo } = await req.json();
+    const { title, price, quantity, payer, userId, tipo, statusManual } = await req.json();
+    const agora = new Date();
+    const mesAtual = agora.getMonth();
+    const anoAtual = agora.getFullYear();
+
+    // Verifica se já foi pago neste mês
+    const pagamentoAprovadoMes = await prisma.pagamento.findFirst({
+      where: {
+        alunoId: userId,
+        tipo,
+        status: "approved",
+        criadoEm: {
+          gte: new Date(anoAtual, mesAtual, 1),
+          lt: new Date(anoAtual, mesAtual + 1, 1),
+        },
+      },
+    });
+
+    if (pagamentoAprovadoMes) {
+      return NextResponse.json({
+        pagamentoId: pagamentoAprovadoMes.pagamentoId,
+        status: pagamentoAprovadoMes.status,
+        qr_code: pagamentoAprovadoMes.codigo_pix,
+        mensagem: "Pagamento já foi feito neste mês.",
+      });
+    }
+
+    // Se ainda não aprovado, verifica se há pendente válido
+    const pagamentoExistente = await prisma.pagamento.findFirst({
+      where: {
+        alunoId: userId,
+        tipo,
+        status: { not: "approved" },
+        expiraEm: { gt: agora },
+      },
+      orderBy: { criadoEm: "desc" },
+    });
+
+    if (pagamentoExistente) {
+      return NextResponse.json({
+        pagamentoId: pagamentoExistente.pagamentoId,
+        status: pagamentoExistente.status,
+        qr_code: pagamentoExistente.codigo_pix,
+        mensagem: "Pagamento pendente ainda válido.",
+      });
+    }
 
     const payment_data = {
       transaction_amount: price,
@@ -24,11 +72,20 @@ export async function POST(req) {
       },
     };
 
-    const payment = await mercadopago.payment.create(payment_data);
-    const transacao = payment.body.point_of_interaction.transaction_data;
+    let payment = { body: {} };
+    let transacao = { qr_code: null };
 
-    // Criar registro do pagamento
-    await prisma.pagamento.create({
+    if (statusManual === "approved") {
+      payment.body = {
+        id: `manual-${Date.now()}`,
+        status: "approved",
+      };
+    } else {
+      payment = await mercadopago.payment.create(payment_data);
+      transacao = payment.body.point_of_interaction.transaction_data;
+    }
+
+    const novoPagamento = await prisma.pagamento.create({
       data: {
         titulo: title,
         valor: price,
@@ -39,7 +96,7 @@ export async function POST(req) {
         pagamentoId: String(payment.body.id),
         alunoId: userId,
         expiraEm: new Date(Date.now() + 15 * 60 * 1000),
-        tipo: tipo
+        tipo,
       },
     });
 
@@ -47,10 +104,14 @@ export async function POST(req) {
       pagamentoId: payment.body.id,
       status: payment.body.status,
       qr_code: transacao.qr_code,
-      qr_code_base64: transacao.qr_code_base64,
     });
   } catch (error) {
     console.error("Erro ao criar pagamento:", error);
-    return NextResponse.json({ error: "Erro ao criar pagamento" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao criar pagamento: " + error.message },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }

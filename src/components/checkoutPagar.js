@@ -1,54 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogClose,
 } from "@/components/ui/dialog";
-
-import { UserService } from "@/services/user.service";
 import Swal from "sweetalert2";
+import { UserService } from "@/services/user.service";
+import QRCode from "qrcode";
 
-export default function CheckoutPagar({ title = "Pagamento do Aluno", price, quantity, onPaymentSuccess }) {
-  const [user, setUser] = useState(null);
-  const [qrCodeBase64, setQrCodeBase64] = useState("");
-  const [codigoPix, setCodigoPix] = useState("");
-  const [tempoRestante, setTempoRestante] = useState(null);
-  const [open, setOpen] = useState(false);
+export default function CheckoutPagar({ title, price, quantity, alunoId }) {
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tempoRestante, setTempoRestante] = useState(900);
+  const intervalRef = useRef(null);
+  const [jaPago, setJaPago] = useState(false);
+
+  const traduzirStatus = (status) => {
+    const traducoes = {
+      approved: "Aprovado",
+      pending: "Pendente",
+      rejected: "Rejeitado",
+      in_process: "Em processamento",
+      refunded: "Reembolsado",
+      canceled: "Cancelado",
+    };
+    return traducoes[status] || status;
+  };
 
   useEffect(() => {
-    const currentUser = UserService.getCurrentUser();
-    setUser(currentUser);
-  }, []);
+    const verificarPagamento = async () => {
+      try {
+        const res = await fetch(`/api/mp/verificar-pagamento?alunoId=${alunoId}&tipo=mensalidade`);
+        const data = await res.json();
+        setJaPago(data.pago);
+      } catch (err) {
+        console.error("Erro ao verificar pagamento:", err);
+      }
+    };
 
-  useEffect(() => {
-    if (tempoRestante === null) return;
-    const timer = setInterval(() => {
-      setTempoRestante((prev) => {
-        if (prev !== null && prev <= 1000) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev !== null ? prev - 1000 : null;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [tempoRestante]);
-  
-  const handlePayment = async () => {
-    if (!user) {
-      alert("Usuário não identificado.");
-      return;
+    if (alunoId) {
+      verificarPagamento();
     }
+  }, [alunoId]);
 
+  const handleGerarPix = async () => {
+    setLoading(true);
     try {
-      const response = await fetch("/api/mp/pagamentos", {
+      const user = UserService.getCurrentUser();
+      if (!user || user.tipo !== "aluno") {
+        throw new Error("Usuário não autenticado ou não é aluno");
+      }
+
+      const res = await fetch("/api/mp/pagamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,80 +69,106 @@ export default function CheckoutPagar({ title = "Pagamento do Aluno", price, qua
             first_name: user.nome?.split(" ")[0] || "Aluno",
             last_name: user.nome?.split(" ")[1] || "",
           },
-          userId: user.id,
+          userId: alunoId,
         }),
       });
 
-      const data = await response.json();
-      if (data.qr_code_base64 && data.qr_code) {
-        setQrCodeBase64(data.qr_code_base64);
-        setCodigoPix(data.qr_code);
-        setTempoRestante(15 * 60 * 1000);
-        setOpen(true);
-        if (onPaymentSuccess) onPaymentSuccess(title);
-      } else {
-        alert("Erro ao gerar pagamento. Tente novamente.");
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error("Resposta não é JSON:", text);
+        throw new Error("Resposta inválida do servidor");
       }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao gerar pagamento");
+
+      const qrCodeBase64 = await QRCode.toDataURL(data.qr_code);
+
+      setQrCodeData({
+        pagamentoId: data.pagamentoId,
+        status: data.status,
+        qrCode: data.qr_code,
+        qrCodeBase64,
+        mensagem: data.mensagem,
+      });
+
+      setTempoRestante(900);
+      setShowModal(true);
+
+      intervalRef.current = setInterval(() => {
+        setTempoRestante((prev) => {
+          if (prev <= 1) {
+            clearInterval(intervalRef.current);
+            setShowModal(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error) {
-      console.error("Erro ao gerar Pix:", error);
-      alert("Erro ao gerar pagamento.");
+      console.error("Erro ao gerar PIX:", error);
+      Swal.fire("Erro!", error.message || "Erro ao gerar pagamento PIX.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formatarTempo = (ms) => {
-    const min = Math.floor(ms / 60000);
-    const seg = Math.floor((ms % 60000) / 1000);
-    return `${min}:${seg < 10 ? "0" : ""}${seg}`;
-  };
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
-      <Button onClick={handlePayment} disabled={!user}>
-        Pagar com PIX - R${price?.toFixed(2)}
-      </Button>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-md shadow-md text-center">
+        <h2 className="text-lg font-semibold mb-4">{title}</h2>
+        <p className="text-2xl font-bold text-primary">
+          R$ {price.toFixed(2)}
+        </p>
+        <Button onClick={handleGerarPix} disabled={loading || jaPago}>
+          {jaPago ? "Já pago" : loading ? "Gerando..." : "Pagar Mensalidade via PIX"}
+        </Button>
+      </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg sm:mx-auto p-6 rounded-lg bg-white dark:bg-gray-900">
-         <DialogHeader>
-  <DialogTitle>Pagamento PIX - {title}</DialogTitle>
-</DialogHeader>
-
-{tempoRestante !== null && tempoRestante > 0 ? (
-  <div className="text-red-600 mb-2">
-    Código Pix expira em: {formatarTempo(tempoRestante)}
-  </div>
-) : (
-  <Button variant="outline" onClick={handlePayment} className="mb-4">
-    Gerar Novo Pix
-  </Button>
-)}
-
-
-          {qrCodeBase64 && (
-            <div className="flex flex-col items-center gap-4">
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagamento via PIX</DialogTitle>
+          </DialogHeader>
+          {qrCodeData ? (
+            <>
               <img
-                className="w-48 h-48"
-                src={`data:image/png;base64,${qrCodeBase64}`}
+                src={qrCodeData.qrCodeBase64}
                 alt="QR Code PIX"
+                className="w-64 h-64 mx-auto"
               />
-              <div className="font-semibold">PIX Copia e Cola (R$ {price?.toFixed(2)}):</div>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  navigator.clipboard.writeText(codigoPix);
-                  alert("Código Pix copiado para área de transferência.");
-                }}
-              >
-                Copiar código Pix
-              </Button>
-            </div>
+              <p className="text-center mt-2 text-sm text-red-600">
+                Código expira em: {Math.floor(tempoRestante / 60)}:
+                {String(tempoRestante % 60).padStart(2, "0")}
+              </p>
+              <p className="text-center mt-2">
+                Status: {traduzirStatus(qrCodeData.status)}
+              </p>
+              {qrCodeData.mensagem && (
+                <p className="text-center text-sm text-gray-500">
+                  {qrCodeData.mensagem}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-center">Carregando QR Code...</p>
           )}
-
-          <DialogClose asChild>
-            <Button variant="ghost" className="mt-6 w-full">
-              Fechar
-            </Button>
-          </DialogClose>
+          <Button
+            className="mt-4 w-full"
+            onClick={() => setShowModal(false)}
+            variant="outline"
+          >
+            Fechar
+          </Button>
         </DialogContent>
       </Dialog>
     </>

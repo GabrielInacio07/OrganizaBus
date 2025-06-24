@@ -12,6 +12,7 @@ import {
   faArrowLeft,
   faEye,
   faEyeSlash,
+  faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 import { UserService } from "@/services/user.service";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
@@ -27,6 +28,7 @@ export default function CadastroPage() {
     cpf: "",
     password: "",
     confirmPassword: "",
+    valorMensalidade: "",
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({ telefone: "", cpf: "" });
@@ -98,7 +100,8 @@ export default function CadastroPage() {
         formData.email,
         formData.telefone.replace(/\D/g, ""),
         formData.cpf.replace(/\D/g, ""),
-        formData.password
+        formData.password,
+        parseFloat(formData.valorMensalidade) || 0
       );
       alert("Usuário cadastrado com sucesso");
       router.push("/rotas/login");
@@ -164,6 +167,18 @@ export default function CadastroPage() {
     />
   </div>
 ))}
+<div className="flex items-center px-4 py-2 rounded-xl w-full h-16 md:h-12 shadow-inner gap-2 bg-gray-100 text-gray-900">
+  <FontAwesomeIcon icon={faDollarSign} className="text-lg" />
+  <input
+    type="number"
+    name="valorMensalidade"
+    placeholder="Valor da mensalidade (R$)"
+    value={formData.valorMensalidade}
+    onChange={(e) => handleFormEdit(e, "valorMensalidade")}
+    className="bg-transparent outline-none w-full placeholder-gray-500"
+    required
+  />
+</div>
 
 {/* Inputs de senha */}
 {[["password", "Senha"], ["confirmPassword", "Repita a senha"]].map(

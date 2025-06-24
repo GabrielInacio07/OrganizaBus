@@ -13,7 +13,7 @@ export async function GET(req) {
     where: { motoristaId },
     include: {
       pagamentos: {
-        orderBy: {criadoEm: "desc"},
+        orderBy: { criadoEm: "desc" },
         take: 1,
       }
     },
@@ -22,6 +22,7 @@ export async function GET(req) {
 
   return NextResponse.json(alunos);
 }
+
 export async function DELETE(req) {
   try {
     const { id } = await req.json();
@@ -44,5 +45,53 @@ export async function DELETE(req) {
   } catch (err) {
     console.error("Erro ao remover aluno:", err);
     return NextResponse.json({ erro: "Erro ao remover aluno" }, { status: 500 });
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+    const {
+      id,
+      nome,
+      email,
+      telefone,
+      cpf,
+      faculdade,
+      possuiBolsa,
+      valorBolsa,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json({ erro: "ID do aluno não fornecido" }, { status: 400 });
+    }
+
+    const alunoExistente = await prisma.aluno.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!alunoExistente) {
+      return NextResponse.json({ erro: "Aluno não encontrado" }, { status: 404 });
+    }
+
+    const dadosAtualizados = {
+      nome,
+      email,
+      telefone,
+      cpf,
+      faculdade,
+      possuiBolsa: possuiBolsa || false,
+      valorBolsa: possuiBolsa ? parseFloat(valorBolsa) : null,
+    };
+
+    const alunoAtualizado = await prisma.aluno.update({
+      where: { id: parseInt(id) },
+      data: dadosAtualizados,
+    });
+
+    return NextResponse.json(alunoAtualizado, { status: 200 });
+  } catch (error) {
+    console.error("Erro ao atualizar aluno:", error);
+    return NextResponse.json({ erro: error.message }, { status: 500 });
   }
 }

@@ -94,9 +94,7 @@ export default function PerfilAluno() {
           <TabsTrigger value="dados" className="flex items-center gap-2">
             <User size={16} /> Dados Pessoais
           </TabsTrigger>
-          <TabsTrigger value="historico" className="flex items-center gap-2">
-            <Clock size={16} /> Histórico de Pagamentos
-          </TabsTrigger>
+         
         </TabsList>
 
         <TabsContent value="dados">
@@ -135,29 +133,7 @@ export default function PerfilAluno() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="historico">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Pagamentos</CardTitle>
-              <CardDescription>Acompanhe os pagamentos realizados.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {pagamentos.map((p) => (
-                  <li
-                    key={p.id}
-                    className="border px-4 py-2 rounded-md bg-gray-100 text-sm"
-                  >
-                    <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
-                    <span className="font-semibold">{traduzirStatus(p.status)}</span> em{" "}
-                    {new Date(p.criadoEm).toLocaleString("pt-BR")}
-                  </li>
-                ))}
-                {pagamentos.length === 0 && <p>Nenhum pagamento encontrado.</p>}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
       </Tabs>
     </div>
   );

@@ -11,42 +11,60 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 
 export default function PaginaAluno() {
- const [aluno, setAluno] = useState(null);
-const router = useRouter();
+  const [aluno, setAluno] = useState(null);
+  const [pagamentos, setPagamentos] = useState([]);
+  const router = useRouter();
 
-useEffect(() => {
-  const fetchAluno = async () => {
-    try {
-      const response = await UserService.buscarAluno();
-      console.log("ALUNO RECEBIDO:", response.data); // <= adicione isso
-      setAluno(response.data);
-    } catch (error) {
-      console.error("Erro ao buscar dados do aluno:", error);
-    }
+  const traduzirStatus = (status) => {
+    const traducoes = {
+      approved: "Aprovado",
+      pending: "Pendente",
+      rejected: "Rejeitado",
+      in_process: "Em processamento",
+      refunded: "Reembolsado",
+      canceled: "Cancelado",
+    };
+    return traducoes[status] || status;
   };
-  fetchAluno();
-}, []);
 
-const handleLogout = () => {
-  UserService.logout();
-  router.push("/rotas/login");
-};
+  useEffect(() => {
+    const fetchAluno = async () => {
+      try {
+        const response = await UserService.buscarAluno();
+        setAluno(response.data);
 
-if (!aluno) {
-  return (
-    <div className="p-6 max-w-4xl mx-auto text-center">
-      <h1 className="text-2xl font-semibold text-gray-700 dark:text-gray-200">
-        Carregando dados do aluno...
-      </h1>
-    </div>
-  );
-}
+        const res = await fetch(
+          `/api/mp/pagamentos/aluno?alunoId=${response.data.id}`
+        );
+        const data = await res.json();
+        setPagamentos(data);
+      } catch (error) {
+        console.error("Erro ao buscar dados do aluno:", error);
+      }
+    };
 
-// mover para cá
-const valorMensalidade = parseFloat(aluno.valorMensalidade || 0);
-const valorBolsa = aluno.possuiBolsa && aluno.valorBolsa ? parseFloat(aluno.valorBolsa) : 0;
-const valorFinalMensalidade = valorMensalidade - valorBolsa;
-console.log('Aluno:', aluno);
+    fetchAluno();
+  }, []);
+
+  const handleLogout = () => {
+    UserService.logout();
+    router.push("/rotas/login");
+  };
+
+  if (!aluno) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto text-center">
+        <h1 className="text-2xl font-semibold text-gray-700 dark:text-gray-200">
+          Carregando dados do aluno...
+        </h1>
+      </div>
+    );
+  }
+
+  const valorMensalidade = parseFloat(aluno.valorMensalidade || 0);
+  const valorBolsa =
+    aluno.possuiBolsa && aluno.valorBolsa ? parseFloat(aluno.valorBolsa) : 0;
+  const valorFinalMensalidade = valorMensalidade - valorBolsa;
 
   return (
     <>
@@ -68,24 +86,52 @@ console.log('Aluno:', aluno);
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6 mt-6">
-            {aluno.possuiBolsa  && (
+            {aluno.possuiBolsa && (
               <CheckoutAuxilio
                 title="Bolsa-Estudantil"
-                price={aluno.valorBolsa}
+                price={valorBolsa}
                 quantity={1}
                 alunoId={aluno.id}
               />
             )}
-
             <CheckoutPagar
               title="Pagamento do Aluno"
               price={valorFinalMensalidade}
               quantity={1}
+              alunoId={aluno.id}
             />
+          </div>
+
+          <div className="mt-10">
+            <details className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
+              <summary className="cursor-pointer font-semibold text-lg">
+                📜 Histórico de Pagamentos
+              </summary>
+              <ul className="mt-4 space-y-3">
+                {pagamentos.length > 0 ? (
+                  pagamentos.map((p) => (
+                    <li
+                      key={p.id}
+                      className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
+                    >
+                      <strong>{p.titulo}</strong> - R${" "}
+                      {Number(p.valor).toFixed(2)} -{" "}
+                      <span className="font-semibold text-blue-600 dark:text-blue-300">
+                        {traduzirStatus(p.status)}
+                      </span>{" "}
+                      em {new Date(p.criadoEm).toLocaleString("pt-BR")}
+                    </li>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Nenhum pagamento encontrado.
+                  </p>
+                )}
+              </ul>
+            </details>
           </div>
         </div>
       </main>
-
       <Footer />
     </>
   );

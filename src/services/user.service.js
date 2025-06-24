@@ -2,17 +2,29 @@ const base = '/api';
 
 export const UserService = {
   // MOTORISTA
-  async registrar(nome, email, telefone, cpf, senha) {
+  async registrar(nome, email, telefone, cpf, senha, valorMensalidade) {
     const res = await fetch(`${base}/registrar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, email, telefone, cpf, senha, tipo: 'motorista' }),
+      body: JSON.stringify({ nome, email, telefone, cpf, senha, tipo: 'motorista', valorMensalidade }),
     });
     return res.json();
   },
 
   // ALUNO
-async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId, valorMensalidade, possuiBolsa, valorBolsa) {
+  async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId, valorMensalidade, possuiBolsa, valorBolsa) {
+  console.log("Dados enviados para a API:", {
+    nome,
+    email,
+    telefone,
+    cpf,
+    senha,
+    faculdade,
+    motoristaId,
+    valorMensalidade,
+    possuiBolsa,
+    valorBolsa,
+  }); // Log para depuração
   const res = await fetch(`${base}/registrarAluno`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,15 +37,18 @@ async registrarAluno(nome, email, telefone, cpf, senha, faculdade, motoristaId, 
       faculdade,
       tipo: 'aluno',
       motoristaId,
-      valorMensalidade,
-      possuiBolsa,
-      valorBolsa,
-      statusPagamento: 'não gerado'
+      valorMensalidade: parseFloat(valorMensalidade) || 0,
+      possuiBolsa: Boolean(possuiBolsa), // Converte para booleano
+      valorBolsa: possuiBolsa ? parseFloat(valorBolsa) || 0 : null,
+      statusPagamento: 'não gerado',
     }),
   });
-  return res.json();
-},
-
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.erro || 'Erro ao cadastrar aluno');
+  }
+  return data;
+}, 
 
   async enviarSenhaPorEmail(email, senha) {
     try {
@@ -62,33 +77,33 @@ Equipe OrganizaBus`,
 
   // LOGIN
   async verificarUsuario(email, senha) {
-  try {
-    const res = await fetch(`${base}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha }),
-    });
+    try {
+      const res = await fetch(`${base}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha }),
+      });
 
-    if (!res.ok) return null;
+      if (!res.ok) return null;
 
-    const data = await res.json();
-    console.log("Dados recebidos do backend:", data);
+      const data = await res.json();
+      console.log("Dados recebidos do backend:", data);
 
-    if (data.erro) return null;
+      if (data.erro) return null;
 
-    // Corrigir tipo mesmo se não existir
-    if (!data.tipo) {
-      data.tipo = 'aluno'; // fallback se backend não mandou
-    } else {
-      data.tipo = data.tipo.toLowerCase();
+      // Corrigir tipo mesmo se não existir
+      if (!data.tipo) {
+        data.tipo = 'aluno'; // fallback se backend não mandou
+      } else {
+        data.tipo = data.tipo.toLowerCase();
+      }
+
+      return data;
+    } catch (e) {
+      console.error('Erro ao verificar usuário:', e);
+      return null;
     }
-
-    return data;
-  } catch (e) {
-    console.error('Erro ao verificar usuário:', e);
-    return null;
-  }
-},
+  },
 
   // SESSION
   setCurrentUser(user) {
@@ -165,7 +180,6 @@ Equipe OrganizaBus`,
   },
 
   // Suporte para lista e remoção de alunos
-
   async listarAlunos({ mes, ano } = {}) {
     const user = this.getCurrentUser();
     if (!user?.id) throw new Error('Usuário não encontrado');
@@ -181,71 +195,75 @@ Equipe OrganizaBus`,
     }
     return res.json();
   },
- buscarAluno() {
-  const user = this.getCurrentUser();
 
-  if (!user || user.tipo !== 'aluno') {
-    throw new Error('Usuário não é um aluno ou não está autenticado');
-  }
+  async buscarAluno() {
+    const user = this.getCurrentUser();
 
-  // Corrigir possíveis valores incorretos salvos como string
-  user.possuiBolsa = user.possuiBolsa === true || user.possuiBolsa === "true";
-  user.valorMensalidade = parseFloat(user.valorMensalidade || 0);
-  user.valorBolsa =
-    user.valorBolsa !== null && user.valorBolsa !== undefined
-      ? parseFloat(user.valorBolsa)
-      : 0;
+    if (!user || user.tipo !== 'aluno') {
+      throw new Error('Usuário não é um aluno ou não está autenticado');
+    }
 
-  return Promise.resolve({ data: user });
-},
+    // Corrigir possíveis valores incorretos salvos como string
+    user.possuiBolsa = user.possuiBolsa === true || user.possuiBolsa === "true";
+    user.valorMensalidade = parseFloat(user.valorMensalidade || 0);
+    user.valorBolsa =
+      user.valorBolsa !== null && user.valorBolsa !== undefined
+        ? parseFloat(user.valorBolsa)
+        : 0;
 
-async removerAluno(id) {
-  const res = await fetch('/api/alunos', {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id }),
-  });
+    return Promise.resolve({ data: user });
+  },
 
-  if (!res.ok) {
-    let mensagem = 'Erro ao remover aluno';
+  async removerAluno(id) {
+    const res = await fetch('/api/alunos', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      let mensagem = 'Erro ao remover aluno';
+      try {
+        const data = await res.json();
+        mensagem = data.erro || mensagem;
+      } catch {}
+      throw new Error(mensagem);
+    }
+
     try {
-      const data = await res.json();
-      mensagem = data.erro || mensagem;
-    } catch {}
-    throw new Error(mensagem);
-  }
+      return await res.json();
+    } catch {
+      return { ok: true }; // fallback seguro
+    }
+  },
 
-  try {
+  async atualizarAluno(id, dadosAtualizados) {
+    const res = await fetch(`/api/alunos`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...dadosAtualizados }),
+    });
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || "Erro ao atualizar aluno");
+    }
     return await res.json();
-  } catch {
-    return { ok: true }; // fallback seguro
+  },
+
+  async alterarSenha(email, novaSenha) {
+    const res = await fetch('/api/alterarSenha', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, novaSenha }),
+    });
+
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro?.erro || 'Erro ao alterar senha');
+    }
+
+    return res.json();
   }
-},
-
-async atualizarAluno(id, dadosAtualizados) {
-  const res = await fetch(`/api/alunos/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dadosAtualizados),
-  });
-  if (!res.ok) throw new Error("Erro ao atualizar aluno");
-  return await res.json();
-},
-
-async alterarSenha(email, novaSenha) {
-  const res = await fetch('/api/alterarSenha', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, novaSenha }),
-  });
-
-  if (!res.ok) {
-    const erro = await res.json().catch(() => ({}));
-    throw new Error(erro?.erro || 'Erro ao alterar senha');
-  }
-
-  return res.json();
-}
 };

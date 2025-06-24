@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { UserService } from "@/services/user.service";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
@@ -40,6 +40,7 @@ export default function Motorista() {
     valorMensalidade: "",
     possuiBolsa: false,
     valorBolsa: "",
+    pagoEmEspecie: false,
   });
   const [alunos, setAlunos] = useState([]);
   const [motoristaLogado, setMotoristaLogado] = useState(false);
@@ -49,6 +50,10 @@ export default function Motorista() {
   const [data, setData] = useState([]);
   const [valorTotal, setValorTotal] = useState(0);
   const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [editarMensalidade, setEditarMensalidade] = useState(false);
+  const [novoValorMensalidade, setNovoValorMensalidade] = useState(
+    motorista?.valorMensalidade || "0"
+  );
 
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().getMonth() + 1
@@ -144,39 +149,68 @@ export default function Motorista() {
     }));
   };
 
-  const abrirModalEdicao = (aluno) => {
-    setAlunoSelecionado(aluno);
-    setFormData({
-      nome: aluno.nome || "",
-      email: aluno.email || "",
-      telefone: aluno.telefone || "",
-      cpf: aluno.cpf || "",
-      faculdade: aluno.faculdade || "",
-      valorMensalidade: aluno.valorMensalidade || "",
-      possuiBolsa: aluno.possuiBolsa || false,
-      valorBolsa: aluno.valorBolsa || "",
-    });
-    setShowEditModal(true);
-  };
+const abrirModalEdicao = (aluno) => {
+  console.log("Aluno selecionado para edição:", aluno);
+  setAlunoSelecionado(aluno);
+  setFormData({
+    nome: aluno.nome || "",
+    email: aluno.email || "",
+    telefone: aluno.telefone || "",
+    cpf: aluno.cpf || "",
+    faculdade: aluno.faculdade || "",
+    possuiBolsa: aluno.possuiBolsa || false,
+    valorBolsa: aluno.valorBolsa || "",
+    pagoEmEspecie: false,
+  });
+  setShowEditModal(true);
+};
 
-  const handleEditarAluno = async (e) => {
-    e.preventDefault();
-    try {
-      await UserService.atualizarAluno(alunoSelecionado.id, {
-        nome: formData.nome,
-        email: formData.email,
-        telefone: formData.telefone,
-        cpf: formData.cpf,
-        faculdade: formData.faculdade,
+const handleEditarAluno = async (e) => {
+  e.preventDefault();
+  try {
+    const valorBolsa = formData.possuiBolsa ? parseFloat(formData.valorBolsa || 0) : null;
+
+    // Atualiza os dados do aluno
+    await UserService.atualizarAluno(alunoSelecionado.id, {
+      nome: formData.nome,
+      email: formData.email,
+      telefone: formData.telefone,
+      cpf: formData.cpf,
+      faculdade: formData.faculdade,
+      possuiBolsa: formData.possuiBolsa,
+      valorBolsa,
+    });
+
+    // Se marcado como "Pago em espécie", registra pagamento manual
+    if (formData.pagoEmEspecie) {
+      await fetch("/api/mp/pagamentos/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Mensalidade paga em espécie",
+          tipo: "mensalidade",
+          price: alunoSelecionado.valorMensalidade || 0,
+          quantity: 1,
+          payer: {
+            email: alunoSelecionado.email,
+            first_name: alunoSelecionado.nome?.split(" ")[0] || "Aluno",
+            last_name: alunoSelecionado.nome?.split(" ")[1] || "",
+          },
+          userId: alunoSelecionado.id,
+          statusManual: "approved", // usado para indicar pagamento manual
+        }),
       });
-      Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
-      setShowEditModal(false);
-      setAlunoSelecionado(null);
-      await carregarAlunos();
-    } catch (error) {
-      alert("Erro ao atualizar aluno: " + error.message);
     }
-  };
+
+    Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
+    setShowEditModal(false);
+    setAlunoSelecionado(null);
+    await carregarAlunos();
+  } catch (error) {
+    alert("Erro ao atualizar aluno: " + error.message);
+  }
+};
+
 
   const handleRemoverAluno = async (id) => {
     if (confirm("Tem certeza que deseja remover este aluno?")) {
@@ -274,57 +308,61 @@ export default function Motorista() {
                 <DialogHeader>
                   <DialogTitle>Cadastro de Aluno</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                <form
+                  onSubmit={handleSubmit}
+                  className="grid gap-4 py-4 text-sm"
+                >
                   {["nome", "email", "telefone", "cpf", "faculdade"].map(
                     (campo) => (
-                      <input
-                        key={campo}
-                        type={campo === "email" ? "email" : "text"}
-                        name={campo}
-                        value={formData[campo]}
-                        onChange={handleChange}
-                        placeholder={
-                          campo.charAt(0).toUpperCase() + campo.slice(1)
-                        }
-                        className="border p-2 rounded w-full"
-                        required
-                      />
+                      <div key={campo} className="space-y-1">
+                        <label className="block font-semibold capitalize">
+                          {campo}
+                        </label>
+                        <input
+                          type={campo === "email" ? "email" : "text"}
+                          name={campo}
+                          value={formData[campo]}
+                          onChange={handleChange}
+                          placeholder={`Digite o ${campo}`}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          required
+                        />
+                      </div>
                     )
                   )}
 
-                  <input
-                    type="number"
-                    name="valorMensalidade"
-                    value={formData.valorMensalidade || ""}
-                    onChange={handleChange}
-                    placeholder="Valor da Mensalidade (R$)"
-                    className="border p-2 rounded w-full"
-                    required
-                  />
-
-                  <label className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-2">
                     <input
                       type="checkbox"
                       name="possuiBolsa"
                       checked={formData.possuiBolsa || false}
                       onChange={handleChange}
+                      className="h-4 w-4 text-blue-600"
                     />
-                    Possui bolsa de estudos?
-                  </label>
+                    <label className="font-medium text-gray-700">
+                      Possui bolsa de estudos?
+                    </label>
+                  </div>
+                
 
                   {formData.possuiBolsa && (
-                    <input
-                      type="number"
-                      name="valorBolsa"
-                      value={formData.valorBolsa || ""}
-                      onChange={handleChange}
-                      placeholder="Valor da Bolsa (R$)"
-                      className="border p-2 rounded w-full"
-                      required
-                    />
+                    <div className="space-y-1">
+                      <label className="block font-semibold">
+                        Valor da Bolsa (R$)
+                      </label>
+                      <input
+                        type="number"
+                        name="valorBolsa"
+                        value={formData.valorBolsa || ""}
+                        onChange={handleChange}
+                        placeholder="Ex: 150.00"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        required
+                      />
+                    </div>
                   )}
 
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-2 pt-4">
                     <Button
                       type="button"
                       variant="outline"
@@ -332,39 +370,155 @@ export default function Motorista() {
                     >
                       Cancelar
                     </Button>
-                    <Button type="submit">Cadastrar</Button>
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Cadastrar
+                    </Button>
                   </div>
                 </form>
               </DialogContent>
             </Dialog>
             {/* Botão para abrir o modal de edição de aluno */}
             <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-              <DialogContent className="sm:max-w-[600px]">
+  <DialogContent className="sm:max-w-[600px]">
+    <DialogHeader>
+      <DialogTitle>Editar Aluno</DialogTitle>
+    </DialogHeader>
+    <form onSubmit={handleEditarAluno} className="grid gap-4 py-4 text-sm">
+      {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
+        <div key={campo} className="space-y-1">
+          <label className="block font-semibold capitalize">{campo}</label>
+          <input
+            type={campo === "email" ? "email" : "text"}
+            name={campo}
+            value={formData[campo]}
+            onChange={handleChange}
+            placeholder={`Digite o ${campo}`}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            required
+          />
+        </div>
+      ))}
+
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          type="checkbox"
+          name="possuiBolsa"
+          checked={formData.possuiBolsa || false}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600"
+        />
+        <label className="font-medium text-gray-700">
+          Possui bolsa de estudos?
+        </label>
+      </div>
+  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      name="pagoEmEspecie"
+                      checked={formData.pagoEmEspecie || false}
+                      onChange={handleChange}
+                      
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label className="font-medium text-gray-700">
+                      Pago em dinheiro
+                    </label>
+                  </div>
+      {formData.possuiBolsa && (
+        <div className="space-y-1">
+          <label className="block font-semibold">Valor da Bolsa (R$)</label>
+          <input
+            type="number"
+            name="valorBolsa"
+            value={formData.valorBolsa || ""}
+            onChange={handleChange}
+            placeholder="Ex: 150.00"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            required
+          />
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowEditModal(false)}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Salvar
+        </Button>
+      </div>
+    </form>
+  </DialogContent>
+</Dialog>
+            {/* Botão para editar mensalidade */}
+            <Dialog
+              open={editarMensalidade}
+              onOpenChange={setEditarMensalidade}
+            >
+              <DialogContent className="sm:max-w-[400px]">
                 <DialogHeader>
-                  <DialogTitle>Editar Aluno</DialogTitle>
+                  <DialogTitle>Editar Valor da Mensalidade</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleEditarAluno} className="grid gap-4 py-4">
-                  {["nome", "email", "telefone", "cpf", "faculdade"].map(
-                    (campo) => (
-                      <input
-                        key={campo}
-                        type={campo === "email" ? "email" : "text"}
-                        name={campo}
-                        value={formData[campo]}
-                        onChange={handleChange}
-                        placeholder={
-                          campo.charAt(0).toUpperCase() + campo.slice(1)
-                        }
-                        className="border p-2 rounded w-full"
-                        required
-                      />
-                    )
-                  )}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      const atual = parseFloat(novoValorMensalidade);
+                      if (atual <= 0) {
+                        alert(
+                          "O valor da mensalidade deve ser maior que zero."
+                        );
+                        return;
+                      }
+                      await UserService.atualizarPerfilMotorista(motorista.id, {
+                        valorMensalidade: atual,
+                      });
+                      setMotorista((prev) => ({
+                        ...prev,
+                        valorMensalidade: atual,
+                      }));
+                      Swal.fire("Sucesso!", "Valor atualizado.", "success");
+                      setEditarMensalidade(false);
+                      // Atualizar alunos associados
+                      await fetch("/api/atualizarMensalidadeAlunos", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          motoristaId: motorista.id,
+                          valorMensalidade: atual,
+                        }),
+                      });
+                    } catch (error) {
+                      alert("Erro ao atualizar valor: " + error.message);
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <input
+                    type="number"
+                    value={novoValorMensalidade}
+                    onChange={(e) => setNovoValorMensalidade(e.target.value)}
+                    placeholder="Novo valor da mensalidade"
+                    className="border p-2 rounded w-full"
+                    required
+                    min="0.01"
+                    step="0.01"
+                  />
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setShowEditModal(false)}
+                      onClick={() => setEditarMensalidade(false)}
                     >
                       Cancelar
                     </Button>
@@ -373,6 +527,20 @@ export default function Motorista() {
                 </form>
               </DialogContent>
             </Dialog>
+            <Button
+              onClick={() => {
+                setNovoValorMensalidade(
+                  motorista?.valorMensalidade?.toFixed(2) || "0"
+                );
+                setEditarMensalidade(true);
+              }}
+              className="text-lg px-4 py-2 font-semibold"
+              variant="outline"
+              title="Clique para editar o valor da mensalidade"
+            >
+              💵 R$ {motorista?.valorMensalidade?.toFixed(2)}
+            </Button>
+
             {/* Botão de logout */}
             <Button
               onClick={handleLogout}
