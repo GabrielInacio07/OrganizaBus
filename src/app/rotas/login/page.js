@@ -177,7 +177,14 @@ export default function LoginPage() {
             >
               Cadastrar
             </button>
+           
           </div>
+           <Link
+              href="/rotas/recuperar-acesso"
+              className="text-sm text-blue-600 hover:underline text-center w-full mt-2"
+            >
+              Esqueceu a senha? Clique aqui para recuperar o acesso!
+            </Link>
         </form>
       </div>
     </div>
