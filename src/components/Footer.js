@@ -3,14 +3,14 @@ import { FaInstagram, FaGithub } from 'react-icons/fa';
 
 const developers = [
   {
-    name: 'Desenvolvedor 1',
-    instagram: 'https://instagram.com/seu_instagram1',
-    github: 'https://github.com/seu_github1',
+    name: 'Gabriel Inácio',
+    instagram: 'https://instagram.com/gabriel_inacio07',
+    github: 'https://github.com/gabrielinacio07',
   },
   {
     name: 'Desenvolvedor 2',
-    instagram: 'https://instagram.com/seu_instagram2',
-    github: 'https://github.com/seu_github2',
+    instagram: 'https://instagram.com/vgiacominixx.dev',
+    github: 'https://github.com/VitorGiacomini',
   },
 ];
 

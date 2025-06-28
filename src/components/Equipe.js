@@ -45,11 +45,11 @@ export default function EquipePage() {
           {[{
             name: "Vitor Giacomini",
             role: "Desenvolvedor Frontend",
-            img: "#"
+            img: "/img/imagem-perfil.jpg"
           }, {
             name: "Gabriel Inácio",
             role: "Desenvolvedor Backend",
-            img: "#"
+            img: "/img/imagem-perfil.jpg"
           }].map(({ name, role, img }, i) => (
             <motion.div
               key={name}
