@@ -15,15 +15,14 @@ import {
 import {
   Users,
   CheckCircle,
-  Clock,
   XCircle,
-  DollarSign,
   User,
   UserRoundPlus,
   LogOut,
 } from "lucide-react";
 import ResumoCard from "@/components/dashboard/ResumoCard";
 import Footer from "@/components/Footer";
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function Motorista() {
   const DashboardChart = dynamic(() => import("@/components/dashComponent"), {
@@ -277,10 +276,11 @@ const handleEditarAluno = async (e) => {
     router.push("/rotas/login");
   };
 
-  if (!motoristaLogado) return <div>Verificando login...</div>;
+  if (!motoristaLogado) return <div><LoadingOverlay/></div>;
 
   return (
     <>
+    <LoadingOverlay />
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left">

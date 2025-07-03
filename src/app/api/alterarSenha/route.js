@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
-
-const prisma = new PrismaClient();
 
 async function enviarEmailConfirmacao(email) {
   const transporter = nodemailer.createTransport({
@@ -37,12 +35,11 @@ export async function PUT(req) {
     if (aluno) {
       await prisma.aluno.update({ where: { email }, data: { senha: novaSenha } });
     } else if (motorista) {
-      await prisma.Motorista.update({ where: { email }, data: { senha: novaSenha } });
+      await prisma.user.update({ where: { email }, data: { senha: novaSenha } }); // <-- Corrigido aqui
     } else {
       return new Response(JSON.stringify({ erro: 'Usuário não encontrado' }), { status: 404 });
     }
 
-    // Enviar e-mail de confirmação
     await enviarEmailConfirmacao(email);
 
     return new Response(JSON.stringify({ mensagem: 'Senha atualizada com sucesso' }), { status: 200 });

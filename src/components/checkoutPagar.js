@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,22 +31,6 @@ export default function CheckoutPagar({ title, price, quantity, alunoId }) {
     return traducoes[status] || status;
   };
 
-  useEffect(() => {
-    const verificarPagamento = async () => {
-      try {
-        const res = await fetch(`/api/mp/verificar-pagamento?alunoId=${alunoId}&tipo=mensalidade`);
-        const data = await res.json();
-        setJaPago(data.pago);
-      } catch (err) {
-        console.error("Erro ao verificar pagamento:", err);
-      }
-    };
-
-    if (alunoId) {
-      verificarPagamento();
-    }
-  }, [alunoId]);
-
   const handleGerarPix = async () => {
     setLoading(true);
     try {
@@ -72,13 +55,6 @@ export default function CheckoutPagar({ title, price, quantity, alunoId }) {
           userId: alunoId,
         }),
       });
-
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        console.error("Resposta não é JSON:", text);
-        throw new Error("Resposta inválida do servidor");
-      }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao gerar pagamento");
@@ -115,12 +91,51 @@ export default function CheckoutPagar({ title, price, quantity, alunoId }) {
   };
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+    if (qrCodeData?.pagamentoId && showModal) {
+      const polling = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
+          const data = await res.json();
+          if (data.status === "approved") {
+            Swal.fire({
+              icon: "success",
+              title: "Pagamento aprovado!",
+              text: "Seu pagamento foi confirmado com sucesso.",
+              timer: 3000,
+              showConfirmButton: false,
+            });
+            setShowModal(false);
+            clearInterval(polling);
+            clearInterval(intervalRef.current);
+            setJaPago(true);
+          }
+        } catch (err) {
+          console.error("Erro ao verificar status:", err);
+        }
+      }, 5000);
+      return () => clearInterval(polling);
+    }
+  }, [qrCodeData?.pagamentoId, showModal]);
+
+  useEffect(() => {
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  useEffect(() => {
+    const verificarPagamento = async () => {
+      try {
+        const res = await fetch(`/api/mp/verificar-pagamento?alunoId=${alunoId}&tipo=mensalidade`);
+        const data = await res.json();
+        setJaPago(data.pago);
+      } catch (err) {
+        console.error("Erro ao verificar pagamento:", err);
       }
     };
-  }, []);
+
+    if (alunoId) {
+      verificarPagamento();
+    }
+  }, [alunoId]);
 
   return (
     <>
@@ -162,11 +177,7 @@ export default function CheckoutPagar({ title, price, quantity, alunoId }) {
           ) : (
             <p className="text-center">Carregando QR Code...</p>
           )}
-          <Button
-            className="mt-4 w-full"
-            onClick={() => setShowModal(false)}
-            variant="outline"
-          >
+          <Button className="mt-4 w-full" onClick={() => setShowModal(false)} variant="outline">
             Fechar
           </Button>
         </DialogContent>

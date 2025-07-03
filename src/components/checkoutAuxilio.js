@@ -15,7 +15,7 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [jaPago, setJaPago] = useState(false);  
+  const [jaPago, setJaPago] = useState(false);
   const [tempoRestante, setTempoRestante] = useState(900);
   const intervalRef = useRef(null);
 
@@ -30,7 +30,6 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
     };
     return traducoes[status] || status;
   };
-
 
   const handleGerarPix = async () => {
     setLoading(true);
@@ -57,19 +56,8 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
         }),
       });
 
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        console.error("Resposta não é JSON:", text);
-        throw new Error("Resposta inválida do servidor");
-      }
-
       const data = await res.json();
-      console.log("Resposta da API /api/mp/pagamentos (Auxílio):", data);
-
-      if (!res.ok) {
-        throw new Error(data.error || "Erro ao gerar pagamento");
-      }
+      if (!res.ok) throw new Error(data.error || "Erro ao gerar pagamento");
 
       const qrCodeBase64 = await QRCode.toDataURL(data.qr_code);
 
@@ -80,17 +68,18 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
         qrCodeBase64,
         mensagem: data.mensagem,
       });
+
       setShowModal(true);
-      setTempoRestante(900)
-      intervalRef.current = setInterval(() =>{
-        setTempoRestante((prev) =>{
+      setTempoRestante(900);
+      intervalRef.current = setInterval(() => {
+        setTempoRestante((prev) => {
           if (prev <= 1) {
-            clearInterval(intervalRef.current)
+            clearInterval(intervalRef.current);
             setShowModal(false);
             return 0;
           }
           return prev - 1;
-        })
+        });
       }, 1000);
     } catch (error) {
       console.error("Erro ao gerar PIX:", error);
@@ -99,29 +88,50 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
       setLoading(false);
     }
   };
-  // Reinicializa o temporizador quando abre o modal
+
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
+    if (qrCodeData?.pagamentoId && showModal) {
+      const polling = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
+          const data = await res.json();
+          if (data.status === "approved") {
+            Swal.fire({
+              icon: "success",
+              title: "Pagamento aprovado!",
+              text: "Seu pagamento foi confirmado com sucesso.",
+              timer: 3000,
+              showConfirmButton: false,
+            });
+            setShowModal(false);
+            clearInterval(polling);
+            clearInterval(intervalRef.current);
+            setJaPago(true);
+          }
+        } catch (err) {
+          console.error("Erro ao verificar status:", err);
+        }
+      }, 5000);
+      return () => clearInterval(polling);
+    }
+  }, [qrCodeData?.pagamentoId, showModal]);
+
+  useEffect(() => {
+    return () => clearInterval(intervalRef.current);
   }, []);
 
   useEffect(() => {
-    const verificarPagamento  = async () => {
+    const verificarPagamento = async () => {
       try {
-        const res = await fetch(`/api/mp/verificar-pagamento?alunoId=${alunoId}&tipo${tipo}` )
+        const res = await fetch(`/api/mp/verificar-pagamento?alunoId=${alunoId}&tipo=auxilio`);
         const data = await res.json();
-        setJaPago(data.pago)
-      }catch(err){
-        console.log('erro ao verificar pagamento', err)
+        setJaPago(data.pago);
+      } catch (err) {
+        console.log("Erro ao verificar pagamento", err);
       }
-    }
-    if (alunoId){
-      verificarPagamento();
-    }
-}, [alunoId]);
+    };
+    if (alunoId) verificarPagamento();
+  }, [alunoId]);
 
   return (
     <>
@@ -131,7 +141,7 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
           R$ {price.toFixed(2)}
         </p>
         <Button onClick={handleGerarPix} disabled={loading || jaPago}>
-          {jaPago? "Já pago nesse mês":loading ? "Gerando..." : "Pagar Bolsa via PIX"}
+          {jaPago ? "Já pago nesse mês" : loading ? "Gerando..." : "Pagar Bolsa via PIX"}
         </Button>
       </div>
 
@@ -141,27 +151,24 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
             <DialogTitle>Pagamento via PIX</DialogTitle>
           </DialogHeader>
           {qrCodeData ? (
-  <>
-    <img
-      src={qrCodeData.qrCodeBase64}
-      alt="QR Code PIX"
-      className="w-64 h-64 mx-auto"
-    />
-    <p className="text-center mt-2 text-sm text-red-600">
-      Código expira em: {Math.floor(tempoRestante / 60)}:{String(tempoRestante % 60).padStart(2, "0")}
-    </p>
-    <p className="text-center mt-2">Status: {traduzirStatus(qrCodeData.status)}</p>
-    
-  </>
-) : (
-  <p className="text-center">Carregando QR Code...</p>
-)}
-
-          <Button
-            className="mt-4 w-full"
-            onClick={() => setShowModal(false)}
-            variant="outline"
-          >
+            <>
+              <img
+                src={qrCodeData.qrCodeBase64}
+                alt="QR Code PIX"
+                className="w-64 h-64 mx-auto"
+              />
+              <p className="text-center mt-2 text-sm text-red-600">
+                Código expira em: {Math.floor(tempoRestante / 60)}:
+                {String(tempoRestante % 60).padStart(2, "0")}
+              </p>
+              <p className="text-center mt-2">
+                Status: {traduzirStatus(qrCodeData.status)}
+              </p>
+            </>
+          ) : (
+            <p className="text-center">Carregando QR Code...</p>
+          )}
+          <Button className="mt-4 w-full" onClick={() => setShowModal(false)} variant="outline">
             Fechar
           </Button>
         </DialogContent>

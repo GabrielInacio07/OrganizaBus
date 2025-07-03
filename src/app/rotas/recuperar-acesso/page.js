@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-
+import LoadingOverlay from "@/components/loadingOverlay";
 export default function RecuperarAcesso() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -109,6 +109,8 @@ export default function RecuperarAcesso() {
   };
 
   return (
+    <>
+    <LoadingOverlay />
     <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
       <h1 className="text-xl font-semibold mb-4 text-center">Recuperar Acesso</h1>
 
@@ -168,5 +170,6 @@ export default function RecuperarAcesso() {
         </>
       )}
     </div>
+    </>
   );
 }

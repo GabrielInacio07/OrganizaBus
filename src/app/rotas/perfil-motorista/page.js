@@ -30,7 +30,6 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-
 export default function PerfilMotorista() {
   const router = useRouter();
   const [motorista, setMotorista] = useState(null);
@@ -183,6 +182,7 @@ export default function PerfilMotorista() {
   }
 
   return (
+    <>
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Button
@@ -311,5 +311,6 @@ export default function PerfilMotorista() {
         </TabsContent>
       </Tabs>
     </div>
+    </>
   );
 }

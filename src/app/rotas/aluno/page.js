@@ -6,14 +6,23 @@ import CheckoutPagar from "@/components/checkoutPagar";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { UserService } from "@/services/user.service";
-import { BotaoSair } from "@/components/botaoSair";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
+import NavbarAlt from "@/components/NavBarAlt";
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function PaginaAluno() {
   const [aluno, setAluno] = useState(null);
   const [pagamentos, setPagamentos] = useState([]);
   const router = useRouter();
+  const [paginaAtual, setPaginaAtual] = useState(1);
+const pagamentosPorPagina = 5;
+
+const totalPaginas = Math.ceil(pagamentos.length / pagamentosPorPagina);
+const inicio = (paginaAtual - 1) * pagamentosPorPagina;
+const fim = inicio + pagamentosPorPagina;
+const pagamentosPaginados = pagamentos.slice(inicio, fim);
+
 
   const traduzirStatus = (status) => {
     const traducoes = {
@@ -46,10 +55,7 @@ export default function PaginaAluno() {
     fetchAluno();
   }, []);
 
-  const handleLogout = () => {
-    UserService.logout();
-    router.push("/rotas/login");
-  };
+ 
 
   if (!aluno) {
     return (
@@ -68,7 +74,16 @@ export default function PaginaAluno() {
 
   return (
     <>
+      <LoadingOverlay />
+      <NavbarAlt/>
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+      <div className="w-36 h-36 rounded-full object-cover mx-auto mb-4 shadow-md ">
+        <img
+          src="/img/imagem-perfil.jpg"
+          alt="Imagem de perfil do aluno"
+          className="w-full h-full rounded-full object-cover"
+        />
+      </div>
         <div className="max-w-4xl mx-auto space-y-6">
           <h1 className="text-3xl font-bold text-center">
             Bem-vindo(a), <span className="text-primary">{aluno.nome}</span>
@@ -82,7 +97,6 @@ export default function PaginaAluno() {
               <User size={18} />
               Acessar Perfil
             </Button>
-            <BotaoSair onClick={handleLogout} />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6 mt-6">
@@ -103,33 +117,54 @@ export default function PaginaAluno() {
           </div>
 
           <div className="mt-10">
-            <details className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
-              <summary className="cursor-pointer font-semibold text-lg">
-                📜 Histórico de Pagamentos
-              </summary>
-              <ul className="mt-4 space-y-3">
-                {pagamentos.length > 0 ? (
-                  pagamentos.map((p) => (
-                    <li
-                      key={p.id}
-                      className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
-                    >
-                      <strong>{p.titulo}</strong> - R${" "}
-                      {Number(p.valor).toFixed(2)} -{" "}
-                      <span className="font-semibold text-blue-600 dark:text-blue-300">
-                        {traduzirStatus(p.status)}
-                      </span>{" "}
-                      em {new Date(p.criadoEm).toLocaleString("pt-BR")}
-                    </li>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Nenhum pagamento encontrado.
-                  </p>
-                )}
-              </ul>
-            </details>
-          </div>
+  <details open className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
+    <summary open className="cursor-pointer font-semibold text-lg">
+      📜 Histórico de Pagamentos
+    </summary>
+
+    <ul className="mt-4 space-y-3">
+      {pagamentos.length > 0 ? (
+        pagamentosPaginados.map((p) => (
+          <li
+            key={p.id}
+            className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
+          >
+            <strong>{p.titulo}</strong> - R${" "}
+            {Number(p.valor).toFixed(2)} -{" "}
+            <span className="font-semibold text-blue-600 dark:text-blue-300">
+              {traduzirStatus(p.status)}
+            </span>{" "}
+            em {new Date(p.criadoEm).toLocaleString("pt-BR")}
+          </li>
+        ))
+      ) : (
+        <p className="text-sm text-gray-500 mt-2">
+          Nenhum pagamento encontrado.
+        </p>
+      )}
+    </ul>
+
+    {/* Paginação */}
+    {totalPaginas > 1 && (
+      <div className="flex justify-center mt-4 gap-2 flex-wrap">
+        {Array.from({ length: totalPaginas }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => setPaginaAtual(i + 1)}
+            className={`px-3 py-1 rounded ${
+              paginaAtual === i + 1
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+    )}
+  </details>
+</div>
+
         </div>
       </main>
       <Footer />

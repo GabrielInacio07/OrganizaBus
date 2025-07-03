@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import Separator from "@/components/separador/Separador";
 import ContatoPage from "@/components/Contato";
 import EquipePage from "@/components/Equipe";
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function Home() {
   const sobreRef = useRef(null);
@@ -15,6 +16,8 @@ export default function Home() {
   const contatoRef = useRef(null);
 
   return (
+    <>    
+      <LoadingOverlay />
     <div className="w-full min-h-screen overflow-x-hidden">
       <Navbar />
       <HeroContent />
@@ -33,5 +36,7 @@ export default function Home() {
       </div>
       <Footer />
     </div>
+    </>
+
   );
 }

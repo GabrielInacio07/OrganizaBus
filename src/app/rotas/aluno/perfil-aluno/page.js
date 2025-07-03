@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Lock, User, Clock } from "lucide-react";
 import { BotaoSair } from "@/components/botaoSair";
 import { BotaoVoltar } from "@/components/botaoVoltar";
+import LoadingOverlay from "@/components/loadingOverlay";
 
 export default function PerfilAluno() {
   const router = useRouter();
@@ -82,6 +83,8 @@ export default function PerfilAluno() {
   if (!user) return <p>Carregando...</p>;
 
   return (
+    <>
+    <LoadingOverlay />
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Perfil do Aluno</h1>
@@ -136,5 +139,6 @@ export default function PerfilAluno() {
         
       </Tabs>
     </div>
+    </>
   );
 }

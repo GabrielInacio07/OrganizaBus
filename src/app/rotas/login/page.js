@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import LoadingOverlay from "@/components/loadingOverlay";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,9 +75,10 @@ export default function LoginPage() {
   };
 
   return (
+    <>    <LoadingOverlay/>
     <div
       className={`min-h-screen flex items-center justify-center px-4 py-10 transition-colors duration-300 ${
-        isLightMode ? "bg-white" : "bg-[#0f1f4b]"
+        isLightMode ? "bg-gray-50" : "bg-[#0f1f4b]"
       }`}
     >
       {loading && <LoadingOverlay />}
@@ -89,9 +91,19 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-col items-center gap-6 w-full">
+        <div className="w-40 h-40 rounded-full object-cover mx-auto mb-1 shadow-md bg-white" >
+           <Link href="/" className="flex items-center justify-center">
+          <Image
+           src="/img/logo.png"
+            width={150}
+            height={150}
+            alt="Logo do site"
+            />
+            </Link>
+        </div>
         <div
           className={`text-center text-sm ${
-            isLightMode ? "text-gray-800" : "text-white"
+            isLightMode ? "text-blue-600" : "text-white"
           }`}
         >
           <Link
@@ -105,7 +117,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col items-center gap-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl px-8 py-10 rounded-2xl shadow-xl bg-white transition-all duration-300"
+          className={`flex flex-col items-center gap-6 w-full max-w-lg md:max-w-xl lg:max-w-2xl px-8 py-10 rounded-2xl shadow-xl bg-white transition-all duration-300`}
         >
           <div
             className={`text-3xl md:text-4xl mb-2 font-semibold ${
@@ -188,5 +200,7 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+    </>
+
   );
 }
