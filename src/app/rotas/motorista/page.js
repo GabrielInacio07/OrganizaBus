@@ -53,6 +53,7 @@ export default function Motorista() {
   const [novoValorMensalidade, setNovoValorMensalidade] = useState(
     motorista?.valorMensalidade || "0"
   );
+  const [cadastrandoAluno, setCadastrandoAluno] = useState(false);
 
   const [mesSelecionado, setMesSelecionado] = useState(
     new Date().getMonth() + 1
@@ -206,28 +207,62 @@ const handleEditarAluno = async (e) => {
     setAlunoSelecionado(null);
     await carregarAlunos();
   } catch (error) {
-    alert("Erro ao atualizar aluno: " + error.message);
+    Swal.fire("Erro", `Erro ao atualizar aluno: ${error.message}`, "error");
   }
 };
 
-
-  const handleRemoverAluno = async (id) => {
-    if (confirm("Tem certeza que deseja remover este aluno?")) {
+const handleRemoverAluno = async (id) => {
+  Swal.fire({
+    title: "Tem certeza?",
+    text: "Essa ação não poderá ser desfeita!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sim, remover",
+    cancelButtonText: "Cancelar",
+  }).then(async (result) => {
+    if (result.isConfirmed) {
       try {
+        // Mostra o loading visual
+        Swal.fire({
+          title: "Removendo...",
+          text: "Por favor, aguarde.",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        // Remove o aluno via serviço
         await UserService.removerAluno(id);
-        alert("Aluno removido com sucesso.");
-        await carregarAlunos();
+
+        // Remove o aluno da lista visual imediatamente (feedback rápido)
+        setAlunos((prev) => prev.filter((a) => a.id !== id));
+
+        // Atualiza o gráfico se necessário
         if (motorista && motorista.id) {
           await carregarGrafico(motorista.id, mesSelecionado);
         }
+
+        // Alerta de sucesso
+        Swal.fire({
+          title: "✅ Aluno Removido!",
+          text: "O aluno foi excluído com sucesso.",
+          icon: "success",
+          showConfirmButton: false,
+          timer: 2000,
+        });
       } catch (error) {
-        alert("Erro ao remover aluno: " + error.message);
+        Swal.fire("Erro", `Erro ao remover aluno: ${error.message}`, "error");
       }
     }
-  };
+  });
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setCadastrandoAluno(true);
     try {
       const senhaAleatoria = Math.random().toString(36).slice(-8);
       const valorMensalidade = parseFloat(formData.valorMensalidade || 0);
@@ -267,7 +302,9 @@ const handleEditarAluno = async (e) => {
       setShowModal(false);
       carregarAlunos();
     } catch (error) {
-      alert(error?.message || "Erro ao cadastrar aluno.");
+Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
+    }finally{
+      setCadastrandoAluno(false);
     }
   };
 
@@ -371,11 +408,31 @@ const handleEditarAluno = async (e) => {
                       Cancelar
                     </Button>
                     <Button
-                      type="submit"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Cadastrar
-                    </Button>
+  type="submit"
+  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
+  disabled={cadastrandoAluno}
+>
+  {cadastrandoAluno && (
+    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        fill="none"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+      />
+    </svg>
+  )}
+  {cadastrandoAluno ? "Cadastrando..." : "Cadastrar"}
+</Button>
+
                   </div>
                 </form>
               </DialogContent>
@@ -475,9 +532,8 @@ const handleEditarAluno = async (e) => {
                     try {
                       const atual = parseFloat(novoValorMensalidade);
                       if (atual <= 0) {
-                        alert(
-                          "O valor da mensalidade deve ser maior que zero."
-                        );
+                        Swal.fire("Atenção", "O valor da mensalidade deve ser maior que zero.", "warning");
+
                         return;
                       }
                       await UserService.atualizarPerfilMotorista(motorista.id, {
@@ -499,7 +555,8 @@ const handleEditarAluno = async (e) => {
                         }),
                       });
                     } catch (error) {
-                      alert("Erro ao atualizar valor: " + error.message);
+                      Swal.fire("Erro", `Erro ao atualizar valor: ${error.message}`, "error");
+
                     }
                   }}
                   className="space-y-4"
