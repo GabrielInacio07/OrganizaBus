@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Lock,
   Users,
   CheckCircle,
   XCircle,

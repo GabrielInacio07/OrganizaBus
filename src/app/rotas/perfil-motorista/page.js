@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tabs";
 import {
   ArrowLeft,
+  Save,
   User,
   Lock,
   Mail,
@@ -246,6 +247,7 @@ export default function PerfilMotorista() {
 
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={salvandoDados}>
+                    <Save size={16} />
                     {salvandoDados ? "Salvando..." : "Salvar Dados"}
                   </Button>
                 </div>
@@ -302,7 +304,8 @@ export default function PerfilMotorista() {
 
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={alterandoSenha}>
-                    {alterandoSenha ? "Alterando..." : "Alterar Senha"}
+                    <Save size={16} />
+                    {alterandoSenha ? "Salvando..." : "Salvar nova senha"}
                   </Button>
                 </div>
               </form>
