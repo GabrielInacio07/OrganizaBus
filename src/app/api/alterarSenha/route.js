@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import prisma  from '@/lib/prisma';
 import nodemailer from 'nodemailer';
 
 async function enviarEmailConfirmacao(email) {
