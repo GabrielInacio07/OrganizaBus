@@ -44,8 +44,7 @@ O **OrganizaBus** é uma plataforma web que intermedia a relação entre motoris
 
 | Tela | Descrição |
 |------|-----------|
-| <img src="https://i.imgur.com/KVSh0Kp.png" width="300px"> | Tela de Login |
-| <img src="https://i.imgur.com/1P9lwT7.png" width="300px"> | Tela Inicial (Home) |
+| <img src="https://i.imgur.com/1P9lwT7.png" width="300px"> | Tela Inicial (Home) |![login_tcc](https://github.com/user-attachments/assets/dc775022-82dc-452d-8121-9d4e65a0504f)
 | <img src="https://i.imgur.com/FEe1ksv.png" width="300px"> | Cadastro de Motorista |
 | <img src="https://i.imgur.com/fMKjmXy.png" width="300px"> | Painel do Motorista com Informações |
 | <img src="https://i.imgur.com/JBdXCyv.png" width="300px"> | Cadastro de Aluno |
