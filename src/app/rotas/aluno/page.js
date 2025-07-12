@@ -123,35 +123,47 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
     </summary>
 
 <ul className="mt-4 space-y-3">
-  {pagamentos.length > 0 ? (
-    pagamentosPaginados.map((p) => (
-      <li
-        key={p.id}
-        className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
-      >
-        <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
-        <span className="font-semibold text-blue-600 dark:text-blue-300">
-          {traduzirStatus(p.status)}
-        </span>{" "}
-        em {new Date(p.criadoEm).toLocaleString("pt-BR")}
+{pagamentosPaginados.map((p) => {
+  const dataCriacao = new Date(p.criadoEm);
+  const vencido = p.status !== "approved" && dataCriacao < new Date();
 
-        {/* Botão para pagamento se ainda não pago */}
-        {p.status !== "approved" && (
-          <div className="mt-2">
-            <CheckoutPagar
-              title={p.titulo}
-              price={Number(p.valor)}
-              quantity={p.quantidade}
-              alunoId={aluno.id}
-              pagamentoIdExistente={p.pagamentoId}
-            />
-          </div>
-        )}
-      </li>
-    ))
-  ) : (
-    <p className="text-sm text-gray-500 mt-2">Nenhum pagamento encontrado.</p>
-  )}
+  return (
+    <li
+      key={p.id}
+      className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
+    >
+      <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
+      <span className={`font-semibold ${
+        p.status === "approved"
+          ? "text-green-600 dark:text-green-400"
+          : "text-blue-600 dark:text-blue-300"
+      }`}>
+        {traduzirStatus(p.status)}
+      </span>{" "}
+      em {dataCriacao.toLocaleString("pt-BR")}
+
+      {vencido && (
+        <p className="text-red-600 dark:text-red-400 mt-1">
+          🔴 Pagamento atrasado desde {dataCriacao.toLocaleDateString("pt-BR")}
+        </p>
+      )}
+
+      {/* Botão para pagamento se ainda não pago */}
+      {p.status !== "approved" && (
+        <div className="mt-2">
+          <CheckoutPagar
+            title={p.titulo}
+            price={Number(p.valor)}
+            quantity={p.quantidade}
+            alunoId={aluno.id}
+            pagamentoIdExistente={p.pagamentoId}
+          />
+        </div>
+      )}
+    </li>
+  );
+})}
+
 </ul>
 
 
