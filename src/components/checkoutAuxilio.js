@@ -89,32 +89,52 @@ export default function CheckoutAuxilio({ title, price, quantity, alunoId }) {
     }
   };
 
-  useEffect(() => {
-    if (qrCodeData?.pagamentoId && showModal) {
-      const polling = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
-          const data = await res.json();
-          if (data.status === "approved") {
-            Swal.fire({
-              icon: "success",
-              title: "Pagamento aprovado!",
-              text: "Seu pagamento foi confirmado com sucesso.",
-              timer: 3000,
-              showConfirmButton: false,
+useEffect(() => {
+  if (qrCodeData?.pagamentoId && showModal) {
+    const polling = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
+        const data = await res.json();
+
+        if (data.status === "approved") {
+          Swal.fire({
+            icon: "success",
+            title: "Pagamento aprovado!",
+            text: "Seu pagamento foi confirmado com sucesso.",
+            timer: 3000,
+            showConfirmButton: false,
+          });
+
+          // Enviar e-mail de confirmação
+          try {
+            const user = UserService.getCurrentUser();
+            await fetch("/api/send-confirmation", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                to: user.email,
+                nome: user.nome,
+                valor: price,
+                titulo: title,
+              }),
             });
-            setShowModal(false);
-            clearInterval(polling);
-            clearInterval(intervalRef.current);
-            setJaPago(true);
+          } catch (err) {
+            console.error("Erro ao enviar e-mail de confirmação:", err);
           }
-        } catch (err) {
-          console.error("Erro ao verificar status:", err);
+
+          setShowModal(false);
+          clearInterval(polling);
+          clearInterval(intervalRef.current);
+          setJaPago(true);
         }
-      }, 5000);
-      return () => clearInterval(polling);
-    }
-  }, [qrCodeData?.pagamentoId, showModal]);
+      } catch (err) {
+        console.error("Erro ao verificar status:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(polling);
+  }
+}, [qrCodeData?.pagamentoId, showModal]);
 
   useEffect(() => {
     return () => clearInterval(intervalRef.current);

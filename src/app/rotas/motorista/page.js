@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { UserService } from "@/services/user.service";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
@@ -49,6 +49,7 @@ export default function Motorista() {
   const [alunoSelecionado, setAlunoSelecionado] = useState(null);
   const [data, setData] = useState([]);
   const [valorTotal, setValorTotal] = useState(0);
+  const [mostrarGrafico, setMostrarGrafico] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [editarMensalidade, setEditarMensalidade] = useState(false);
   const [novoValorMensalidade, setNovoValorMensalidade] = useState(
@@ -75,36 +76,84 @@ export default function Motorista() {
   }, []);
 
   useEffect(() => {
-    if (motorista && motorista.id) {
-      carregarAlunos();
-      carregarGrafico(motorista.id, mesSelecionado);
-    }
-  }, [motorista, mesSelecionado]);
+    const inicializar = async () => {
+      if (motorista && motorista.id) {
+        await carregarAlunos();
+        await carregarGrafico(motorista.id, mesSelecionado, anoSelecionado);
+      }
+    };
+    inicializar();
+  }, [motorista, mesSelecionado, anoSelecionado]);
 
   const carregarAlunos = async () => {
     try {
       const alunosCadastrados = await UserService.listarAlunos();
       setAlunos(alunosCadastrados);
+      return alunosCadastrados;
     } catch (err) {
       console.error("Erro ao carregar alunos:", err);
       setAlunos([]);
+      return [];
     }
   };
 
-  const carregarGrafico = async (id, mes = mesSelecionado) => {
+  const carregarGrafico = async (
+    id,
+    mes = mesSelecionado,
+    ano = anoSelecionado
+  ) => {
     setCarregandoDados(true);
-
     try {
+      const queryParams = new URLSearchParams({
+        motoristaId: id,
+        mes,
+        ano,
+      });
       const res = await fetch(
-        `/api/dashboard/pagamentos?motoristaId=${id}&mes=${mes}`
+        `/api/dashboard/pagamentos?${queryParams.toString()}`
       );
-
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-
       const result = await res.json();
 
+      // Verificar se há dados de pagamento retornados pela API
+      const temPagamentos =
+        (result.approved || 0) > 0 ||
+        (result.not_paid || 0) > 0 ||
+        (result.pending || 0) > 0 ||
+        (result.nao_gerado || 0) > 0;
+
+      if (!temPagamentos) {
+        // Verificar se há alunos com data de criação anterior ao filtro
+        const alunosValidos = await UserService.listarAlunos();
+        const filtroAntesDosAlunos =
+          alunosValidos.length === 0 ||
+          !alunosValidos.some((aluno) => {
+            const dataCriacao = new Date(aluno.createdAt);
+            return (
+              dataCriacao.getFullYear() < ano ||
+              (dataCriacao.getFullYear() === ano &&
+                dataCriacao.getMonth() + 1 <= mes)
+            );
+          });
+
+        // IMPORTANTE: Limpar os dados completamente ao invés de setar valores zerados
+        setData([]); // Array vazio ao invés de dados zerados
+        setValorTotal(0);
+
+        Swal.fire(
+          "Sem dados",
+          filtroAntesDosAlunos
+            ? "Não há alunos ou pagamentos registrados para o período selecionado."
+            : "Não há pagamentos registrados para o período selecionado.",
+          "info"
+        );
+        setCarregandoDados(false);
+        return;
+      }
+
+      // Processar os dados de pagamento normalmente
       const naoPagosTotal =
         (result.not_paid || 0) +
         (result.pending || 0) +
@@ -119,12 +168,15 @@ export default function Motorista() {
       setValorTotal(result.total_aprovado || 0);
     } catch (error) {
       console.error("Erro ao carregar dados do gráfico:", error);
-      setData([
-        { name: "Pagos", value: 0 },
-        { name: "Não pagos ", value: 0 },
-        { name: "Não Pagos", value: 0 },
-      ]);
+      // Em caso de erro, também setar array vazio
+      setData([]);
       setValorTotal(0);
+
+      Swal.fire(
+        "Erro",
+        "Erro ao carregar dados do gráfico. Tente novamente.",
+        "error"
+      );
     } finally {
       setCarregandoDados(false);
     }
@@ -134,12 +186,16 @@ export default function Motorista() {
     const novoMes = parseInt(e.target.value);
     setMesSelecionado(novoMes);
     if (motorista && motorista.id) {
-      await carregarGrafico(motorista.id, novoMes);
+      await carregarGrafico(motorista.id, novoMes, anoSelecionado);
     }
   };
 
-  const handleAnoChange = (e) => {
-    setAnoSelecionado(Number(e.target.value));
+  const handleAnoChange = async (e) => {
+    const novoAno = Number(e.target.value);
+    setAnoSelecionado(novoAno);
+    if (motorista && motorista.id) {
+      await carregarGrafico(motorista.id, mesSelecionado, novoAno);
+    }
   };
 
   const handleChange = (e) => {
@@ -150,116 +206,117 @@ export default function Motorista() {
     }));
   };
 
-const abrirModalEdicao = (aluno) => {
-  console.log("Aluno selecionado para edição:", aluno);
-  setAlunoSelecionado(aluno);
-  setFormData({
-    nome: aluno.nome || "",
-    email: aluno.email || "",
-    telefone: aluno.telefone || "",
-    cpf: aluno.cpf || "",
-    faculdade: aluno.faculdade || "",
-    possuiBolsa: aluno.possuiBolsa || false,
-    valorBolsa: aluno.valorBolsa || "",
-    pagoEmEspecie: false,
-  });
-  setShowEditModal(true);
-};
-
-const handleEditarAluno = async (e) => {
-  e.preventDefault();
-  try {
-    const valorBolsa = formData.possuiBolsa ? parseFloat(formData.valorBolsa || 0) : null;
-
-    // Atualiza os dados do aluno
-    await UserService.atualizarAluno(alunoSelecionado.id, {
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      cpf: formData.cpf,
-      faculdade: formData.faculdade,
-      possuiBolsa: formData.possuiBolsa,
-      valorBolsa,
+  const abrirModalEdicao = (aluno) => {
+    console.log("Aluno selecionado para edição:", aluno);
+    setAlunoSelecionado(aluno);
+    setFormData({
+      nome: aluno.nome || "",
+      email: aluno.email || "",
+      telefone: aluno.telefone || "",
+      cpf: aluno.cpf || "",
+      faculdade: aluno.faculdade || "",
+      possuiBolsa: aluno.possuiBolsa || false,
+      valorBolsa: aluno.valorBolsa || "",
+      pagoEmEspecie: false,
     });
+    setShowEditModal(true);
+  };
 
-    // Se marcado como "Pago em espécie", registra pagamento manual
-    if (formData.pagoEmEspecie) {
-      await fetch("/api/mp/pagamentos/manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "Mensalidade paga em espécie",
-          tipo: "mensalidade",
-          price: alunoSelecionado.valorMensalidade || 0,
-          quantity: 1,
-          payer: {
-            email: alunoSelecionado.email,
-            first_name: alunoSelecionado.nome?.split(" ")[0] || "Aluno",
-            last_name: alunoSelecionado.nome?.split(" ")[1] || "",
-          },
-          userId: alunoSelecionado.id,
-          statusManual: "approved", // usado para indicar pagamento manual
-        }),
+  const handleEditarAluno = async (e) => {
+    e.preventDefault();
+    try {
+      const valorBolsa = formData.possuiBolsa
+        ? parseFloat(formData.valorBolsa || 0)
+        : null;
+
+      // Atualiza os dados do aluno
+      await UserService.atualizarAluno(alunoSelecionado.id, {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone,
+        cpf: formData.cpf,
+        faculdade: formData.faculdade,
+        possuiBolsa: formData.possuiBolsa,
+        valorBolsa,
       });
-    }
 
-    Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
-    setShowEditModal(false);
-    setAlunoSelecionado(null);
-    await carregarAlunos();
-  } catch (error) {
-    Swal.fire("Erro", `Erro ao atualizar aluno: ${error.message}`, "error");
-  }
-};
-
-const handleRemoverAluno = async (id) => {
-  Swal.fire({
-    title: "Tem certeza?",
-    text: "Essa ação não poderá ser desfeita!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Sim, remover",
-    cancelButtonText: "Cancelar",
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        // Mostra o loading visual
-        Swal.fire({
-          title: "Removendo...",
-          text: "Por favor, aguarde.",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
+      // Se marcado como "Pago em espécie", registra pagamento manual
+      if (formData.pagoEmEspecie) {
+        await fetch("/api/mp/pagamentos/manual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Mensalidade paga em espécie",
+            tipo: "mensalidade",
+            price: alunoSelecionado.valorMensalidade || 0,
+            quantity: 1,
+            payer: {
+              email: alunoSelecionado.email,
+              first_name: alunoSelecionado.nome?.split(" ")[0] || "Aluno",
+              last_name: alunoSelecionado.nome?.split(" ")[1] || "",
+            },
+            userId: alunoSelecionado.id,
+            statusManual: "approved", // usado para indicar pagamento manual
+          }),
         });
-
-        // Remove o aluno via serviço
-        await UserService.removerAluno(id);
-
-        // Remove o aluno da lista visual imediatamente (feedback rápido)
-        setAlunos((prev) => prev.filter((a) => a.id !== id));
-
-        // Atualiza o gráfico se necessário
-        if (motorista && motorista.id) {
-          await carregarGrafico(motorista.id, mesSelecionado);
-        }
-
-        // Alerta de sucesso
-        Swal.fire({
-          title: "✅ Aluno Removido!",
-          text: "O aluno foi excluído com sucesso.",
-          icon: "success",
-          showConfirmButton: false,
-          timer: 2000,
-        });
-      } catch (error) {
-        Swal.fire("Erro", `Erro ao remover aluno: ${error.message}`, "error");
       }
-    }
-  });
-};
 
+      Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
+      setShowEditModal(false);
+      setAlunoSelecionado(null);
+      await carregarAlunos();
+    } catch (error) {
+      Swal.fire("Erro", `Erro ao atualizar aluno: ${error.message}`, "error");
+    }
+  };
+
+  const handleRemoverAluno = async (id) => {
+    Swal.fire({
+      title: "Tem certeza?",
+      text: "Essa ação não poderá ser desfeita!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sim, remover",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          // Mostra o loading visual
+          Swal.fire({
+            title: "Removendo...",
+            text: "Por favor, aguarde.",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
+          // Remove o aluno via serviço
+          await UserService.removerAluno(id);
+
+          // Remove o aluno da lista visual imediatamente (feedback rápido)
+          setAlunos((prev) => prev.filter((a) => a.id !== id));
+
+          // Atualiza o gráfico se necessário
+          if (motorista && motorista.id) {
+            await carregarGrafico(motorista.id, mesSelecionado);
+          }
+
+          // Alerta de sucesso
+          Swal.fire({
+            title: "✅ Aluno Removido!",
+            text: "O aluno foi excluído com sucesso.",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        } catch (error) {
+          Swal.fire("Erro", `Erro ao remover aluno: ${error.message}`, "error");
+        }
+      }
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -303,8 +360,8 @@ const handleRemoverAluno = async (id) => {
       setShowModal(false);
       carregarAlunos();
     } catch (error) {
-Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
-    }finally{
+      Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
+    } finally {
       setCadastrandoAluno(false);
     }
   };
@@ -314,11 +371,16 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
     router.push("/rotas/login");
   };
 
-  if (!motoristaLogado) return <div><LoadingOverlay/></div>;
+  if (!motoristaLogado)
+    return (
+      <div>
+        <LoadingOverlay />
+      </div>
+    );
 
   return (
     <>
-    <LoadingOverlay />
+      <LoadingOverlay />
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-center sm:text-left">
@@ -381,7 +443,6 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
                       Possui bolsa de estudos?
                     </label>
                   </div>
-                
 
                   {formData.possuiBolsa && (
                     <div className="space-y-1">
@@ -409,115 +470,125 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
                       Cancelar
                     </Button>
                     <Button
-  type="submit"
-  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
-  disabled={cadastrandoAluno}
->
-  {cadastrandoAluno && (
-    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-        fill="none"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
-      />
-    </svg>
-  )}
-  {cadastrandoAluno ? "Cadastrando..." : "Cadastrar"}
-</Button>
-
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
+                      disabled={cadastrandoAluno}
+                    >
+                      {cadastrandoAluno && (
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                          />
+                        </svg>
+                      )}
+                      {cadastrandoAluno ? "Cadastrando..." : "Cadastrar"}
+                    </Button>
                   </div>
                 </form>
               </DialogContent>
             </Dialog>
             {/* Botão para abrir o modal de edição de aluno */}
             <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-  <DialogContent className="sm:max-w-[600px]">
-    <DialogHeader>
-      <DialogTitle>Editar Aluno</DialogTitle>
-    </DialogHeader>
-    <form onSubmit={handleEditarAluno} className="grid gap-4 py-4 text-sm">
-      {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
-        <div key={campo} className="space-y-1">
-          <label className="block font-semibold capitalize">{campo}</label>
-          <input
-            type={campo === "email" ? "email" : "text"}
-            name={campo}
-            value={formData[campo]}
-            onChange={handleChange}
-            placeholder={`Digite o ${campo}`}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-          />
-        </div>
-      ))}
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Editar Aluno</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={handleEditarAluno}
+                  className="grid gap-4 py-4 text-sm"
+                >
+                  {["nome", "email", "telefone", "cpf", "faculdade"].map(
+                    (campo) => (
+                      <div key={campo} className="space-y-1">
+                        <label className="block font-semibold capitalize">
+                          {campo}
+                        </label>
+                        <input
+                          type={campo === "email" ? "email" : "text"}
+                          name={campo}
+                          value={formData[campo]}
+                          onChange={handleChange}
+                          placeholder={`Digite o ${campo}`}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          required
+                        />
+                      </div>
+                    )
+                  )}
 
-      <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
-          name="possuiBolsa"
-          checked={formData.possuiBolsa || false}
-          onChange={handleChange}
-          className="h-4 w-4 text-blue-600"
-        />
-        <label className="font-medium text-gray-700">
-          Possui bolsa de estudos?
-        </label>
-      </div>
-  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      name="possuiBolsa"
+                      checked={formData.possuiBolsa || false}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <label className="font-medium text-gray-700">
+                      Possui bolsa de estudos?
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
                     <input
                       type="checkbox"
                       name="pagoEmEspecie"
                       checked={formData.pagoEmEspecie || false}
                       onChange={handleChange}
-                      
                       className="h-4 w-4 text-blue-600"
                     />
                     <label className="font-medium text-gray-700">
                       Pago em dinheiro
                     </label>
                   </div>
-      {formData.possuiBolsa && (
-        <div className="space-y-1">
-          <label className="block font-semibold">Valor da Bolsa (R$)</label>
-          <input
-            type="number"
-            name="valorBolsa"
-            value={formData.valorBolsa || ""}
-            onChange={handleChange}
-            placeholder="Ex: 150.00"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            required
-          />
-        </div>
-      )}
+                  {formData.possuiBolsa && (
+                    <div className="space-y-1">
+                      <label className="block font-semibold">
+                        Valor da Bolsa (R$)
+                      </label>
+                      <input
+                        type="number"
+                        name="valorBolsa"
+                        value={formData.valorBolsa || ""}
+                        onChange={handleChange}
+                        placeholder="Ex: 150.00"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        required
+                      />
+                    </div>
+                  )}
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setShowEditModal(false)}
-        >
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Salvar
-        </Button>
-      </div>
-    </form>
-  </DialogContent>
-</Dialog>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowEditModal(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
             {/* Botão para editar mensalidade */}
             <Dialog
               open={editarMensalidade}
@@ -533,7 +604,11 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
                     try {
                       const atual = parseFloat(novoValorMensalidade);
                       if (atual <= 0) {
-                        Swal.fire("Atenção", "O valor da mensalidade deve ser maior que zero.", "warning");
+                        Swal.fire(
+                          "Atenção",
+                          "O valor da mensalidade deve ser maior que zero.",
+                          "warning"
+                        );
 
                         return;
                       }
@@ -556,8 +631,11 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
                         }),
                       });
                     } catch (error) {
-                      Swal.fire("Erro", `Erro ao atualizar valor: ${error.message}`, "error");
-
+                      Swal.fire(
+                        "Erro",
+                        `Erro ao atualizar valor: ${error.message}`,
+                        "error"
+                      );
                     }
                   }}
                   className="space-y-4"
@@ -637,7 +715,6 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
             />
           </div>
         </div>
-        {/* Filtros de Mês e Ano */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <select
             value={mesSelecionado}
@@ -679,14 +756,50 @@ Swal.fire("Erro", error?.message || "Erro ao cadastrar aluno.", "error");
           </select>
         </div>
 
-        {/* Gráfico */}
+        {/* Gráfico + Verificação de dados vazios */}
+
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-10">
           {carregandoDados ? (
-            <div className="text-center text-gray-500">
-              Carregando gráfico...
+            <div className="loading-container">
+              <p>Carregando dados...</p>
+            </div>
+          ) : mostrarGrafico && data.length > 0 ? (
+            <div className="grafico-container">
+              {/* Seu componente de gráfico aqui */}
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {data.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Mostrar valor total se houver */}
+              {valorTotal > 0 && (
+                <div className="valor-total">
+                  <h3>Valor Total Aprovado: R$ {valorTotal.toFixed(2)}</h3>
+                </div>
+              )}
             </div>
           ) : (
-            <DashboardChart data={data} valorTotal={valorTotal} />
+            <div className="sem-dados-container">
+              <p>Nenhum dado disponível para o período selecionado.</p>
+            </div>
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mb-6">

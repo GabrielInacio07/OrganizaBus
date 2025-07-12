@@ -15,6 +15,12 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
       return;
     }
 
+    // Se data for um array vazio, limpar o gráfico
+    if (data && data.length === 0) {
+      setChartData([]);
+      return;
+    }
+
     if (motoristaId && mesSelecionado) {
       fetchPagamentos();
     }
@@ -51,6 +57,15 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
       const naoPagosTotal = notPaidCount + pendingCount + naoGeradoCount;
 
       console.log("Pagos:", approvedCount, "Não Pagos (incluindo não gerado):", naoPagosTotal);
+
+      // Verificar se há dados reais
+      const temDados = approvedCount > 0 || naoPagosTotal > 0;
+
+      if (!temDados) {
+        setChartData([]);
+        setLoading(false);
+        return;
+      }
 
       const formattedData = [
         { name: "Pagos", value: approvedCount },
@@ -100,14 +115,15 @@ export default function DashboardChart({ data, motoristaId, mesSelecionado }) {
     );
   }
 
-  const hasData = chartData.some((item) => item.value > 0);
+  // Verificar se há dados válidos - agora considera array vazio como sem dados
+  const hasData = chartData.length > 0 && chartData.some((item) => item.value > 0);
 
   if (!hasData) {
     return (
       <div className="w-full h-96 flex items-center justify-center">
         <div className="text-center text-gray-500">
           <p className="text-lg font-medium mb-2">Nenhum dado encontrado</p>
-          <p className="text-sm">Não há pagamentos para o mês selecionado</p>
+          <p className="text-sm">Não há pagamentos para o período selecionado ou não existiam alunos nessa data.</p>
         </div>
       </div>
     );

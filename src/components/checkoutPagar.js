@@ -11,7 +11,7 @@ import Swal from "sweetalert2";
 import { UserService } from "@/services/user.service";
 import QRCode from "qrcode";
 
-export default function CheckoutPagar({ title, price, quantity, alunoId }) {
+export default function CheckoutPagar({  title, price, quantity, alunoId, pagamentoIdExistente = null }) {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -90,32 +90,65 @@ export default function CheckoutPagar({ title, price, quantity, alunoId }) {
     }
   };
 
-  useEffect(() => {
-    if (qrCodeData?.pagamentoId && showModal) {
-      const polling = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
-          const data = await res.json();
-          if (data.status === "approved") {
-            Swal.fire({
-              icon: "success",
-              title: "Pagamento aprovado!",
-              text: "Seu pagamento foi confirmado com sucesso.",
-              timer: 3000,
-              showConfirmButton: false,
-            });
-            setShowModal(false);
-            clearInterval(polling);
-            clearInterval(intervalRef.current);
-            setJaPago(true);
-          }
-        } catch (err) {
-          console.error("Erro ao verificar status:", err);
+useEffect(() => {
+  if (pagamentoIdExistente) {
+    fetch(`/api/mp/status?id=${pagamentoIdExistente}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "approved") {
+          setJaPago(true);
         }
-      }, 5000);
-      return () => clearInterval(polling);
-    }
-  }, [qrCodeData?.pagamentoId, showModal]);
+      });
+  }
+}, [pagamentoIdExistente]);
+
+
+  useEffect(() => {
+  if (qrCodeData?.pagamentoId && showModal) {
+    const polling = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/mp/status?id=${qrCodeData.pagamentoId}`);
+        const data = await res.json();
+
+        if (data.status === "approved") {
+          Swal.fire({
+            icon: "success",
+            title: "Pagamento aprovado!",
+            text: "Seu pagamento foi confirmado com sucesso.",
+            timer: 3000,
+            showConfirmButton: false,
+          });
+
+          // Enviar e-mail de confirmação
+          try {
+            const user = UserService.getCurrentUser();
+            await fetch("/api/sendEmail/send-confirmation", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                to: user.email,
+                nome: user.nome,
+                valor: price,
+                titulo: title,
+              }),
+            });
+          } catch (err) {
+            console.error("Erro ao enviar e-mail de confirmação:", err);
+          }
+
+          setShowModal(false);
+          clearInterval(polling);
+          clearInterval(intervalRef.current);
+          setJaPago(true);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar status:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(polling);
+  }
+}, [qrCodeData?.pagamentoId, showModal]);
 
   useEffect(() => {
     return () => clearInterval(intervalRef.current);

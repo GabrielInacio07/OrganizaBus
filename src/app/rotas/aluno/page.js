@@ -122,27 +122,38 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
       📜 Histórico de Pagamentos
     </summary>
 
-    <ul className="mt-4 space-y-3">
-      {pagamentos.length > 0 ? (
-        pagamentosPaginados.map((p) => (
-          <li
-            key={p.id}
-            className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
-          >
-            <strong>{p.titulo}</strong> - R${" "}
-            {Number(p.valor).toFixed(2)} -{" "}
-            <span className="font-semibold text-blue-600 dark:text-blue-300">
-              {traduzirStatus(p.status)}
-            </span>{" "}
-            em {new Date(p.criadoEm).toLocaleString("pt-BR")}
-          </li>
-        ))
-      ) : (
-        <p className="text-sm text-gray-500 mt-2">
-          Nenhum pagamento encontrado.
-        </p>
-      )}
-    </ul>
+<ul className="mt-4 space-y-3">
+  {pagamentos.length > 0 ? (
+    pagamentosPaginados.map((p) => (
+      <li
+        key={p.id}
+        className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
+      >
+        <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
+        <span className="font-semibold text-blue-600 dark:text-blue-300">
+          {traduzirStatus(p.status)}
+        </span>{" "}
+        em {new Date(p.criadoEm).toLocaleString("pt-BR")}
+
+        {/* Botão para pagamento se ainda não pago */}
+        {p.status !== "approved" && (
+          <div className="mt-2">
+            <CheckoutPagar
+              title={p.titulo}
+              price={Number(p.valor)}
+              quantity={p.quantidade}
+              alunoId={aluno.id}
+              pagamentoIdExistente={p.pagamentoId}
+            />
+          </div>
+        )}
+      </li>
+    ))
+  ) : (
+    <p className="text-sm text-gray-500 mt-2">Nenhum pagamento encontrado.</p>
+  )}
+</ul>
+
 
     {/* Paginação */}
     {totalPaginas > 1 && (
