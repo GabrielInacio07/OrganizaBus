@@ -15,13 +15,25 @@ export async function GET(req) {
       pagamentos: {
         orderBy: { criadoEm: "desc" },
         take: 1,
-      }
+      },
+      motorista: {
+        select: {
+          diaVencimento: true,
+        },
+      },
     },
     orderBy: { id: "desc" },
   });
 
-  return NextResponse.json(alunos);
+  // Insere diaVencimento manualmente no aluno
+  const alunosComVencimento = alunos.map((aluno) => ({
+    ...aluno,
+    diaVencimento: aluno.motorista?.diaVencimento || 10,
+  }));
+
+  return NextResponse.json(alunosComVencimento);
 }
+
 
 export async function DELETE(req) {
   try {

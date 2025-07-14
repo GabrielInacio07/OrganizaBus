@@ -188,7 +188,7 @@ Equipe OrganizaBus`,
     if (mes) query.append('mes', mes);
     if (ano) query.append('ano', ano);
 
-    const res = await fetch(`/api/alunos?${query.toString()}`);
+    const res = await fetch(`/api/aluno?${query.toString()}`);
     if (!res.ok) {
       const erro = await res.json().catch(() => ({}));
       throw new Error(erro?.erro || 'Erro ao buscar alunos');
@@ -197,25 +197,34 @@ Equipe OrganizaBus`,
   },
 
   async buscarAluno() {
-    const user = this.getCurrentUser();
+  const user = this.getCurrentUser();
 
-    if (!user || user.tipo !== 'aluno') {
-      throw new Error('Usuário não é um aluno ou não está autenticado');
-    }
+  if (!user || user.tipo !== 'aluno') {
+    throw new Error('Usuário não é um aluno ou não está autenticado');
+  }
 
-    // Corrigir possíveis valores incorretos salvos como string
-    user.possuiBolsa = user.possuiBolsa === true || user.possuiBolsa === "true";
-    user.valorMensalidade = parseFloat(user.valorMensalidade || 0);
-    user.valorBolsa =
-      user.valorBolsa !== null && user.valorBolsa !== undefined
-        ? parseFloat(user.valorBolsa)
-        : 0;
+  const res = await fetch(`/api/aluno/${user.id}`);
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({}));
+    throw new Error(erro?.erro || "Erro ao buscar dados do aluno");
+  }
 
-    return Promise.resolve({ data: user });
-  },
+  const aluno = await res.json();
+
+  // Corrige possíveis tipos
+  aluno.possuiBolsa = aluno.possuiBolsa === true || aluno.possuiBolsa === "true";
+  aluno.valorMensalidade = parseFloat(aluno.valorMensalidade || 0);
+  aluno.valorBolsa =
+    aluno.valorBolsa !== null && aluno.valorBolsa !== undefined
+      ? parseFloat(aluno.valorBolsa)
+      : 0;
+
+  return { data: aluno };
+},
+
 
   async removerAluno(id) {
-    const res = await fetch('/api/alunos', {
+    const res = await fetch('/api/aluno', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -240,7 +249,7 @@ Equipe OrganizaBus`,
   },
 
   async atualizarAluno(id, dadosAtualizados) {
-    const res = await fetch(`/api/alunos`, {
+    const res = await fetch(`/api/aluno`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...dadosAtualizados }),

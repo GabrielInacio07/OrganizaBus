@@ -16,13 +16,12 @@ export default function PaginaAluno() {
   const [pagamentos, setPagamentos] = useState([]);
   const router = useRouter();
   const [paginaAtual, setPaginaAtual] = useState(1);
-const pagamentosPorPagina = 5;
+  const pagamentosPorPagina = 5;
 
-const totalPaginas = Math.ceil(pagamentos.length / pagamentosPorPagina);
-const inicio = (paginaAtual - 1) * pagamentosPorPagina;
-const fim = inicio + pagamentosPorPagina;
-const pagamentosPaginados = pagamentos.slice(inicio, fim);
-
+  const totalPaginas = Math.ceil(pagamentos.length / pagamentosPorPagina);
+  const inicio = (paginaAtual - 1) * pagamentosPorPagina;
+  const fim = inicio + pagamentosPorPagina;
+  const pagamentosPaginados = pagamentos.slice(inicio, fim);
 
   const traduzirStatus = (status) => {
     const traducoes = {
@@ -35,6 +34,25 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
       not_paid: "Vencido",
     };
     return traducoes[status] || status;
+  };
+
+  // Função para calcular o vencimento atual
+  const calcularVencimento = () => {
+    const hoje = new Date();
+    const diaVencimento = aluno?.diaVencimento || 10;
+    const mesAtual = hoje.getMonth();
+    const anoAtual = hoje.getFullYear();
+
+    // Vencimento deste mês
+    const vencimentoMesAtual = new Date(anoAtual, mesAtual, diaVencimento);
+    
+    // Se já passou do vencimento deste mês, mostra como vencido
+    if (hoje > vencimentoMesAtual) {
+      return vencimentoMesAtual;
+    }
+    
+    // Se ainda não chegou no vencimento deste mês, mostra o próximo vencimento
+    return vencimentoMesAtual;
   };
 
   useEffect(() => {
@@ -56,8 +74,6 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
     fetchAluno();
   }, []);
 
- 
-
   if (!aluno) {
     return (
       <div className="p-6 max-w-4xl mx-auto text-center">
@@ -76,15 +92,15 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
   return (
     <>
       <LoadingOverlay />
-      <NavbarAlt/>
+      <NavbarAlt />
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-      <div className="w-36 h-36 rounded-full object-cover mx-auto mb-4 shadow-md ">
-        <img
-          src="/img/imagem-perfil.jpg"
-          alt="Imagem de perfil do aluno"
-          className="w-full h-full rounded-full object-cover"
-        />
-      </div>
+        <div className="w-36 h-36 rounded-full object-cover mx-auto mb-4 shadow-md ">
+          <img
+            src="/img/imagem-perfil.jpg"
+            alt="Imagem de perfil do aluno"
+            className="w-full h-full rounded-full object-cover"
+          />
+        </div>
         <div className="max-w-4xl mx-auto space-y-6">
           <h1 className="text-3xl font-bold text-center">
             Bem-vindo(a), <span className="text-primary">{aluno.nome}</span>
@@ -118,77 +134,79 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
           </div>
 
           <div className="mt-10">
-  <details open className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
-    <summary open className="cursor-pointer font-semibold text-lg">
-      📜 Histórico de Pagamentos
-    </summary>
+            <details open className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
+              <summary className="cursor-pointer font-semibold text-lg">
+                📜 Histórico de Pagamentos
+              </summary>
 
-<ul className="mt-4 space-y-3">
-{pagamentosPaginados.map((p) => {
-  const dataCriacao = new Date(p.criadoEm);
-  const vencido = p.status !== "approved" && dataCriacao < new Date();
+              <ul className="mt-4 space-y-3">
+                {pagamentosPaginados.map((p) => {
+                  const dataCriacao = new Date(p.criadoEm);
+                  const hoje = new Date();
+                  const vencimento = calcularVencimento();
+                  const vencido = hoje > vencimento && p.status !== "approved";
 
-  return (
-    <li
-      key={p.id}
-      className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
-    >
-      <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
-      <span className={`font-semibold ${
-        p.status === "approved"
-          ? "text-green-600 dark:text-green-400"
-          : "text-blue-600 dark:text-blue-300"
-      }`}>
-        {traduzirStatus(p.status)}
-      </span>{" "}
-      em {dataCriacao.toLocaleString("pt-BR")}
+                  return (
+                    <li
+                      key={p.id}
+                      className="border rounded-md p-3 text-sm bg-gray-50 dark:bg-gray-900"
+                    >
+                      <strong>{p.titulo}</strong> - R$ {Number(p.valor).toFixed(2)} -{" "}
+                      <span
+                        className={`font-semibold ${
+                          p.status === "approved"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-blue-600 dark:text-blue-300"
+                        }`}
+                      >
+                        {traduzirStatus(p.status)}
+                      </span>{" "}
+                      em {dataCriacao.toLocaleString("pt-BR")}
 
-      {vencido && (
-        <p className="text-red-600 dark:text-red-400 mt-1">
-          🔴 Pagamento atrasado desde {dataCriacao.toLocaleDateString("pt-BR")}
-        </p>
-      )}
+                      {vencido && (
+                        <p className="text-red-600 dark:text-red-400 mt-1">
+                          🔴 Pagamento atrasado desde {vencimento.toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
 
-      {/* Botão para pagamento se ainda não pago */}
-      {p.status !== "approved" && (
-        <div className="mt-2">
-          <CheckoutPagar
-            title={p.titulo}
-            price={Number(p.valor)}
-            quantity={p.quantidade}
-            alunoId={aluno.id}
-            pagamentoIdExistente={p.pagamentoId}
-          />
-        </div>
-      )}
-    </li>
-  );
-})}
+                      {/* Botão para pagamento se ainda não pago */}
+                      {(p.status !== "approved" || vencido) && (
+                        <div className="mt-2">
+                          <CheckoutPagar
+                            title={p.titulo}
+                            price={Number(p.valor)}
+                            quantity={p.quantidade}
+                            alunoId={aluno.id}
+                            pagamentoIdExistente={p.pagamentoId}
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
 
-</ul>
+             
 
-
-    {/* Paginação */}
-    {totalPaginas > 1 && (
-      <div className="flex justify-center mt-4 gap-2 flex-wrap">
-        {Array.from({ length: totalPaginas }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => setPaginaAtual(i + 1)}
-            className={`px-3 py-1 rounded ${
-              paginaAtual === i + 1
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
-    )}
-  </details>
-</div>
-
+              {totalPaginas > 1 && (
+                <div className="flex justify-center mt-4 gap-2 flex-wrap">
+                  {Array.from({ length: totalPaginas }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPaginaAtual(i + 1)}
+                      className={`px-3 py-1 rounded ${
+                        paginaAtual === i + 1
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 dark:bg-gray-700"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </details>
+          </div>
         </div>
       </main>
       <Footer />
