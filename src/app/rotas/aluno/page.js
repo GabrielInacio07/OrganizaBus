@@ -32,6 +32,7 @@ const pagamentosPaginados = pagamentos.slice(inicio, fim);
       in_process: "Em processamento",
       refunded: "Reembolsado",
       canceled: "Cancelado",
+      not_paid: "Vencido",
     };
     return traducoes[status] || status;
   };

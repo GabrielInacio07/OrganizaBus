@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 export async function POST(req) {
   const body = await req.json();
   console.log("Body recebido:", body);
-  const { nome, email, telefone, cpf, senha, tipo, valorMensalidade } = body;
+  const { nome, email, telefone, cpf, senha, tipo, valorMensalidade, diaVencimento } = body;
 
   try {
     // Verificar se já existe usuário com este email
@@ -36,6 +36,7 @@ export async function POST(req) {
         senha: senhaCriptografada, 
         tipo,
         valorMensalidade: parseFloat(valorMensalidade || 0),
+        diaVencimento: parseInt(diaVencimento)
       },
     });
 

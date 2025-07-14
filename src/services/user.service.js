@@ -2,11 +2,11 @@ const base = '/api';
 
 export const UserService = {
   // MOTORISTA
-  async registrar(nome, email, telefone, cpf, senha, valorMensalidade) {
+  async registrar(nome, email, telefone, cpf, senha, valorMensalidade, diaVencimento) {
     const res = await fetch(`${base}/registrar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, email, telefone, cpf, senha, tipo: 'motorista', valorMensalidade }),
+      body: JSON.stringify({ nome, email, telefone, cpf, senha, tipo: 'motorista', valorMensalidade, diaVencimento }),
     });
     return res.json();
   },

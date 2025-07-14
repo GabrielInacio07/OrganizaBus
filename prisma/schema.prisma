@@ -18,6 +18,7 @@ model User {
   tipo      String
   alunos    Aluno[]
   valorMensalidade Float?
+  diaVencimento Int?
 }
 
 model Aluno {

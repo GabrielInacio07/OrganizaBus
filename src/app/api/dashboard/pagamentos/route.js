@@ -8,9 +8,13 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const motoristaId = parseInt(searchParams.get("motoristaId"));
     const mes = parseInt(searchParams.get("mes"));
+    const ano = parseInt(searchParams.get("ano"));
 
-    if (!motoristaId || !mes) {
-      return NextResponse.json({ error: "motoristaId e mes são obrigatórios" }, { status: 400 });
+    if (!motoristaId || !mes || !ano) {
+      return NextResponse.json(
+        { error: "motoristaId, mes e ano são obrigatórios" },
+        { status: 400 }
+      );
     }
 
     const alunos = await prisma.aluno.findMany({
@@ -24,22 +28,22 @@ export async function GET(req) {
     let nao_gerado = 0;
     let total_aprovado = 0;
 
-    const anoAtual = new Date().getUTCFullYear();
+    // ✅ Verifica se há alunos criados até o mês/ano selecionado
+    const temAlunosNoPeriodo = alunos.some((aluno) => {
+      const dataCriacao = new Date(aluno.criadoEm);
+      return (
+        dataCriacao.getUTCFullYear() < ano ||
+        (dataCriacao.getUTCFullYear() === ano && dataCriacao.getUTCMonth() + 1 <= mes)
+      );
+    });
 
     for (const aluno of alunos) {
-      console.log(`📌 Pagamentos do aluno ${aluno.nome} (ID: ${aluno.id}):`);
-
-      for (const p of aluno.pagamentos) {
-        console.log(`  → ID: ${p.id}, criadoEm: ${p.criadoEm}, status: ${p.status}`);
-      }
-
       const pagamentosDoMes = aluno.pagamentos.filter((p) => {
         if (!p.criadoEm) return false;
         const data = new Date(p.criadoEm);
-        console.log(`  🕓 Data convertida: ${data}, mês: ${data.getUTCMonth() + 1}, ano: ${data.getUTCFullYear()}`);
         return (
           data.getUTCMonth() + 1 === mes &&
-          data.getUTCFullYear() === anoAtual
+          data.getUTCFullYear() === ano
         );
       });
 
@@ -66,6 +70,7 @@ export async function GET(req) {
       not_paid,
       nao_gerado,
       total_aprovado,
+      temAlunosNoPeriodo, // ← campo novo
     });
 
   } catch (error) {

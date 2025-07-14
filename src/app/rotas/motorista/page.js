@@ -66,24 +66,31 @@ export default function Motorista() {
   const [carregandoDados, setCarregandoDados] = useState(false);
 
   useEffect(() => {
-    const usuario = UserService.getCurrentUser();
-    if (!usuario) {
-      router.push("/rotas/login");
-    } else {
-      setMotorista(usuario);
-      setMotoristaLogado(usuario.tipo?.toLowerCase() === "motorista");
-    }
-  }, []);
+  const usuario = UserService.getCurrentUser();
+  if (!usuario) {
+    router.push("/rotas/login");
+  } else {
+    setMotorista(usuario);
+    setMotoristaLogado(usuario.tipo?.toLowerCase() === "motorista");
+  }
+}, []);
 
-  useEffect(() => {
-    const inicializar = async () => {
-      if (motorista && motorista.id) {
-        await carregarAlunos();
-        await carregarGrafico(motorista.id, mesSelecionado, anoSelecionado);
-      }
-    };
-    inicializar();
-  }, [motorista, mesSelecionado, anoSelecionado]);
+useEffect(() => {
+  const inicializar = async () => {
+    if (motorista && motorista.id) {
+      await carregarAlunos();
+      await carregarGrafico(motorista.id, mesSelecionado, anoSelecionado);
+    }
+  };
+  inicializar();
+}, [motorista, mesSelecionado, anoSelecionado]);
+
+useEffect(() => {
+  const total = data.reduce((sum, item) => sum + (item.value || 0), 0);
+  setMostrarGrafico(total > 0);
+}, [data]);
+
+
 
   const carregarAlunos = async () => {
     try {
@@ -97,90 +104,77 @@ export default function Motorista() {
     }
   };
 
-  const carregarGrafico = async (
-    id,
-    mes = mesSelecionado,
-    ano = anoSelecionado
-  ) => {
-    setCarregandoDados(true);
-    try {
-      const queryParams = new URLSearchParams({
-        motoristaId: id,
-        mes,
-        ano,
-      });
-      const res = await fetch(
-        `/api/dashboard/pagamentos?${queryParams.toString()}`
-      );
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      const result = await res.json();
+const carregarGrafico = async (
+  id,
+  mes = mesSelecionado,
+  ano = anoSelecionado
+) => {
+  setCarregandoDados(true);
+  try {
+    const queryParams = new URLSearchParams({
+      motoristaId: id,
+      mes,
+      ano,
+    });
 
-      // Verificar se há dados de pagamento retornados pela API
-      const temPagamentos =
-        (result.approved || 0) > 0 ||
-        (result.not_paid || 0) > 0 ||
-        (result.pending || 0) > 0 ||
-        (result.nao_gerado || 0) > 0;
+    const res = await fetch(
+      `/api/dashboard/pagamentos?${queryParams.toString()}`
+    );
 
-      if (!temPagamentos) {
-        // Verificar se há alunos com data de criação anterior ao filtro
-        const alunosValidos = await UserService.listarAlunos();
-        const filtroAntesDosAlunos =
-          alunosValidos.length === 0 ||
-          !alunosValidos.some((aluno) => {
-            const dataCriacao = new Date(aluno.createdAt);
-            return (
-              dataCriacao.getFullYear() < ano ||
-              (dataCriacao.getFullYear() === ano &&
-                dataCriacao.getMonth() + 1 <= mes)
-            );
-          });
-
-        // IMPORTANTE: Limpar os dados completamente ao invés de setar valores zerados
-        setData([]); // Array vazio ao invés de dados zerados
-        setValorTotal(0);
-
-        Swal.fire(
-          "Sem dados",
-          filtroAntesDosAlunos
-            ? "Não há alunos ou pagamentos registrados para o período selecionado."
-            : "Não há pagamentos registrados para o período selecionado.",
-          "info"
-        );
-        setCarregandoDados(false);
-        return;
-      }
-
-      // Processar os dados de pagamento normalmente
-      const naoPagosTotal =
-        (result.not_paid || 0) +
-        (result.pending || 0) +
-        (result.nao_gerado || 0);
-
-      const novosData = [
-        { name: "Pagos", value: result.approved || 0 },
-        { name: "Não Pagos", value: naoPagosTotal },
-      ];
-
-      setData(novosData);
-      setValorTotal(result.total_aprovado || 0);
-    } catch (error) {
-      console.error("Erro ao carregar dados do gráfico:", error);
-      // Em caso de erro, também setar array vazio
-      setData([]);
-      setValorTotal(0);
-
-      Swal.fire(
-        "Erro",
-        "Erro ao carregar dados do gráfico. Tente novamente.",
-        "error"
-      );
-    } finally {
-      setCarregandoDados(false);
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
-  };
+
+    const result = await res.json();
+
+    // ✅ Novo controle: verifica se há alunos válidos no período
+    const temAlunos = result.temAlunosNoPeriodo;
+
+    if (!temAlunos) {
+      setData([]);
+      setMostrarGrafico(false);
+      setValorTotal(0);
+   
+      return;
+    }
+
+    // Verifica se há dados para exibir
+    const naoPagosTotal =
+      (result.not_paid || 0) +
+      (result.pending || 0) +
+      (result.nao_gerado || 0);
+
+    const temDados = (result.approved || 0) > 0 || naoPagosTotal > 0;
+
+    if (!temDados) {
+      setData([]);
+      setMostrarGrafico(false);
+      setValorTotal(0);
+      return;
+    }
+
+    // Monta os dados do gráfico
+    const novosData = [
+      { name: "Pagos", value: result.approved },
+      { name: "Não Pagos", value: naoPagosTotal },
+    ];
+
+    setData(novosData);
+    setMostrarGrafico(true);
+    setValorTotal(result.total_aprovado || 0);
+  } catch (error) {
+    console.error("Erro ao carregar dados do gráfico:", error);
+    setData([]);
+    setValorTotal(0);
+    Swal.fire(
+      "Erro",
+      "Erro ao carregar dados do gráfico. Tente novamente.",
+      "error"
+    );
+  } finally {
+    setCarregandoDados(false);
+  }
+};
 
   const handleMesChange = async (e) => {
     const novoMes = parseInt(e.target.value);
@@ -757,51 +751,32 @@ export default function Motorista() {
         </div>
 
         {/* Gráfico + Verificação de dados vazios */}
+<div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-10">
+  {carregandoDados ? (
+    <div className="w-full h-40 flex items-center justify-center">
+      <p className="text-gray-500">Carregando dados do gráfico...</p>
+    </div>
+  ) : mostrarGrafico ? (
+    <DashboardChart
+      data={data}
+      motoristaId={motorista?.id}
+      mesSelecionado={mesSelecionado}
+    />
+  ) : (
+    <div className="w-full h-40 flex items-center justify-center text-center text-gray-500">
+      <div>
+        <p className="text-lg font-medium mb-1">
+          Nenhum dado disponível
+        </p>
+        <p className="text-sm">
+          Não há pagamentos registrados ou alunos ativos para o período selecionado.
+        </p>
+      </div>
+    </div>
+  )}
+</div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-10">
-          {carregandoDados ? (
-            <div className="loading-container">
-              <p>Carregando dados...</p>
-            </div>
-          ) : mostrarGrafico && data.length > 0 ? (
-            <div className="grafico-container">
-              {/* Seu componente de gráfico aqui */}
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {data.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
 
-              {/* Mostrar valor total se houver */}
-              {valorTotal > 0 && (
-                <div className="valor-total">
-                  <h3>Valor Total Aprovado: R$ {valorTotal.toFixed(2)}</h3>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="sem-dados-container">
-              <p>Nenhum dado disponível para o período selecionado.</p>
-            </div>
-          )}
-        </div>
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <select
             value={filtroStatus}
