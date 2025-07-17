@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 import NavbarAlt from "@/components/NavBarAlt";
 import LoadingOverlay from "@/components/loadingOverlay";
+import { gerarRelatorioPagamentos } from "@/lib/relatorioPdf";
 
 export default function PaginaAluno() {
   const [aluno, setAluno] = useState(null);
@@ -36,23 +37,13 @@ export default function PaginaAluno() {
     return traducoes[status] || status;
   };
 
-  // Função para calcular o vencimento atual
   const calcularVencimento = () => {
     const hoje = new Date();
     const diaVencimento = aluno?.diaVencimento || 10;
     const mesAtual = hoje.getMonth();
     const anoAtual = hoje.getFullYear();
-
-    // Vencimento deste mês
     const vencimentoMesAtual = new Date(anoAtual, mesAtual, diaVencimento);
-    
-    // Se já passou do vencimento deste mês, mostra como vencido
-    if (hoje > vencimentoMesAtual) {
-      return vencimentoMesAtual;
-    }
-    
-    // Se ainda não chegou no vencimento deste mês, mostra o próximo vencimento
-    return vencimentoMesAtual;
+    return hoje > vencimentoMesAtual ? vencimentoMesAtual : vencimentoMesAtual;
   };
 
   useEffect(() => {
@@ -61,9 +52,7 @@ export default function PaginaAluno() {
         const response = await UserService.buscarAluno();
         setAluno(response.data);
 
-        const res = await fetch(
-          `/api/mp/pagamentos/aluno?alunoId=${response.data.id}`
-        );
+        const res = await fetch(`/api/mp/pagamentos/aluno?alunoId=${response.data.id}`);
         const data = await res.json();
         setPagamentos(data);
       } catch (error) {
@@ -73,6 +62,17 @@ export default function PaginaAluno() {
 
     fetchAluno();
   }, []);
+
+  const handleGerarRelatorio = async (tipoRelatorio = 'semestral') => {
+    const pdfBytes = await gerarRelatorioPagamentos(pagamentos, aluno.nome, tipoRelatorio);
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-${tipoRelatorio}-${aluno.nome}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!aluno) {
     return (
@@ -85,8 +85,7 @@ export default function PaginaAluno() {
   }
 
   const valorMensalidade = parseFloat(aluno.valorMensalidade || 0);
-  const valorBolsa =
-    aluno.possuiBolsa && aluno.valorBolsa ? parseFloat(aluno.valorBolsa) : 0;
+  const valorBolsa = aluno.possuiBolsa && aluno.valorBolsa ? parseFloat(aluno.valorBolsa) : 0;
   const valorFinalMensalidade = valorMensalidade - valorBolsa;
 
   return (
@@ -94,7 +93,7 @@ export default function PaginaAluno() {
       <LoadingOverlay />
       <NavbarAlt />
       <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-        <div className="w-36 h-36 rounded-full object-cover mx-auto mb-4 shadow-md ">
+        <div className="w-36 h-36 rounded-full object-cover mx-auto mb-4 shadow-md">
           <img
             src="/img/imagem-perfil.jpg"
             alt="Imagem de perfil do aluno"
@@ -134,6 +133,18 @@ export default function PaginaAluno() {
           </div>
 
           <div className="mt-10">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Detalhes do Aluno</h2>
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => handleGerarRelatorio('semestral')}>
+                  📄 Relatório Semestral
+                </Button>
+                <Button variant="outline" onClick={() => handleGerarRelatorio('anual')}>
+                  📄 Relatório Anual
+                </Button>
+              </div>
+            </div>
+
             <details open className="bg-white dark:bg-gray-800 rounded-md shadow p-4">
               <summary className="cursor-pointer font-semibold text-lg">
                 📜 Histórico de Pagamentos
@@ -169,7 +180,6 @@ export default function PaginaAluno() {
                         </p>
                       )}
 
-                      {/* Botão para pagamento se ainda não pago */}
                       {(p.status !== "approved" || vencido) && (
                         <div className="mt-2">
                           <CheckoutPagar
@@ -185,8 +195,6 @@ export default function PaginaAluno() {
                   );
                 })}
               </ul>
-
-             
 
               {totalPaginas > 1 && (
                 <div className="flex justify-center mt-4 gap-2 flex-wrap">

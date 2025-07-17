@@ -39,7 +39,7 @@ export async function POST(req) {
     const novoPagamento = await prisma.pagamento.create({
       data: {
         titulo: `Pagamento manual (${tipo})`,
-        valor: 0,
+        valor: alunoId.valorMensalidade || 0,
         quantidade: 1,
         status: "approved",
         qr_code: null,

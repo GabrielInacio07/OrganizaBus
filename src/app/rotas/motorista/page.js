@@ -248,6 +248,7 @@ export default function Motorista() {
             statusManual: "approved",
           }),
         });
+        await carregarAlunos()
       }
 
       Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
@@ -842,16 +843,7 @@ export default function Motorista() {
                         <p className="font-semibold">{aluno.nome}</p>
                         <p className="text-sm text-gray-500">{aluno.email}</p>
 
-                        <div className="mt-2 space-y-1">
-                          <p>
-                            💰 <strong>Mensalidade:</strong>{" "}
-                            {ultimoPix?.status || "Não registrado"}
-                          </p>
-                          <p>
-                            🎓 <strong>Auxílio:</strong>{" "}
-                            {ultimoAux?.status || "Não registrado"}
-                          </p>
-                        </div>
+                        
                       </div>
 
                       <div className="flex gap-2">

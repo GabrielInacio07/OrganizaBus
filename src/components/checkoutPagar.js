@@ -178,7 +178,7 @@ useEffect(() => {
           R$ {price.toFixed(2)}
         </p>
         <Button onClick={handleGerarPix} disabled={loading || jaPago}>
-          {jaPago ? "Já pago" : loading ? "Gerando..." : "Pagar Mensalidade via PIX"}
+          {jaPago ? "Já pago nesse mês" : loading ? "Gerando..." : "Pagar Mensalidade via PIX"}
         </Button>
       </div>
 
