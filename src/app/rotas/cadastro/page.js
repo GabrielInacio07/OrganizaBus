@@ -1,5 +1,3 @@
-// CadastroPage.js
-
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -29,6 +27,7 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [pixTipo, setPixTipo] = useState(false);
   const [pixEditavel, setPixEditavel] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -81,6 +80,7 @@ export default function CadastroPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     const errors = {};
     if (!validarTelefone(formData.telefone)) {
@@ -95,6 +95,7 @@ export default function CadastroPage() {
         title: "Senha muito curta",
         text: "A senha deve ter no mínimo 6 caracteres.",
       });
+      setIsLoading(false);
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -103,10 +104,12 @@ export default function CadastroPage() {
         title: "Senhas diferentes",
         text: "As senhas não coincidem.",
       });
+      setIsLoading(false);
       return;
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setIsLoading(false);
       return;
     }
 
@@ -135,12 +138,14 @@ export default function CadastroPage() {
         title: "Erro ao cadastrar",
         text: err.message || "Tente novamente mais tarde.",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <>
-      <LoadingOverlay />
+      <LoadingOverlay isLoading={isLoading} />
       <div
         className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
           isLightMode ? "bg-gray-50" : "bg-[#0f1f4b]"
@@ -235,7 +240,7 @@ export default function CadastroPage() {
               </div>
 
               {/* Mensalidade */}
-              <div className="flex items-center px-4 py-2 rounded-xl h-10 md:h-12 shadow-inner gap-2 md:mt-7 bg-gray-100 text-gray-900">
+              <div className="flex items-center px-4 py-2 rounded-xl h-10 md:h-12 shadow-inner gap-2 bg-gray-100 text-gray-900">
                 <FontAwesomeIcon icon={faDollarSign} className="text-lg" />
                 <input
                   type="number"
@@ -340,8 +345,9 @@ export default function CadastroPage() {
             <button
               type="submit"
               className="w-full mt-2 rounded-md py-2 font-medium bg-blue-700 text-white hover:bg-blue-800 transition-colors text-sm sm:text-base"
+              disabled={isLoading}
             >
-              Cadastrar
+              {isLoading ? "Cadastrando..." : "Cadastrar"}
             </button>
 
             <Link

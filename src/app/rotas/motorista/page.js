@@ -24,6 +24,8 @@ import {
 import ResumoCard from "@/components/dashboard/ResumoCard";
 import Footer from "@/components/Footer";
 import LoadingOverlay from "@/components/loadingOverlay";
+import { gerarRelatorioDashboardPDF } from "@/lib/relatorioMensalDashbord";
+import { gerarRelatorioAnualDashboardPDF } from "@/lib/relatorioAnualDashbord";
 
 export default function Motorista() {
   const DashboardChart = dynamic(() => import("@/components/dashComponent"), {
@@ -54,8 +56,12 @@ export default function Motorista() {
   const [editarMensalidade, setEditarMensalidade] = useState(false);
   const [novoValorMensalidade, setNovoValorMensalidade] = useState("0");
   const [cadastrandoAluno, setCadastrandoAluno] = useState(false);
-  const [mesSelecionado, setMesSelecionado] = useState(new Date().getMonth() + 1);
-  const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear());
+  const [mesSelecionado, setMesSelecionado] = useState(
+    new Date().getMonth() + 1
+  );
+  const [anoSelecionado, setAnoSelecionado] = useState(
+    new Date().getFullYear()
+  );
   const [carregandoDados, setCarregandoDados] = useState(false);
   const [editarVencimento, setEditarVencimento] = useState(false);
   const [novoDiaVencimento, setNovoDiaVencimento] = useState(10);
@@ -69,23 +75,30 @@ export default function Motorista() {
       }
 
       try {
-        const motoristaCompleto = await UserService.obterPerfilMotorista(usuario.id);
-        const diaVencimento = motoristaCompleto.diaVencimento || usuario.diaVencimento || 10;
-        
+        const motoristaCompleto = await UserService.obterPerfilMotorista(
+          usuario.id
+        );
+        const diaVencimento =
+          motoristaCompleto.diaVencimento || usuario.diaVencimento || 10;
+
         setMotorista({
           ...usuario,
           ...motoristaCompleto,
-          diaVencimento
+          diaVencimento,
         });
         setNovoDiaVencimento(diaVencimento);
-        setNovoValorMensalidade(motoristaCompleto.valorMensalidade?.toFixed(2) || usuario.valorMensalidade?.toFixed(2) || "0");
+        setNovoValorMensalidade(
+          motoristaCompleto.valorMensalidade?.toFixed(2) ||
+            usuario.valorMensalidade?.toFixed(2) ||
+            "0"
+        );
         setMotoristaLogado(true);
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
         const diaVencimento = usuario.diaVencimento || 10;
         setMotorista({
           ...usuario,
-          diaVencimento
+          diaVencimento,
         });
         setNovoDiaVencimento(diaVencimento);
         setNovoValorMensalidade(usuario.valorMensalidade?.toFixed(2) || "0");
@@ -123,7 +136,11 @@ export default function Motorista() {
     }
   };
 
-  const carregarGrafico = async (id, mes = mesSelecionado, ano = anoSelecionado) => {
+  const carregarGrafico = async (
+    id,
+    mes = mesSelecionado,
+    ano = anoSelecionado
+  ) => {
     setCarregandoDados(true);
     try {
       const queryParams = new URLSearchParams({
@@ -132,7 +149,9 @@ export default function Motorista() {
         ano,
       });
 
-      const res = await fetch(`/api/dashboard/pagamentos?${queryParams.toString()}`);
+      const res = await fetch(
+        `/api/dashboard/pagamentos?${queryParams.toString()}`
+      );
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -148,7 +167,10 @@ export default function Motorista() {
         return;
       }
 
-      const naoPagosTotal = (result.not_paid || 0) + (result.pending || 0) + (result.nao_gerado || 0);
+      const naoPagosTotal =
+        (result.not_paid || 0) +
+        (result.pending || 0) +
+        (result.nao_gerado || 0);
       const temDados = (result.approved || 0) > 0 || naoPagosTotal > 0;
 
       if (!temDados) {
@@ -170,7 +192,11 @@ export default function Motorista() {
       console.error("Erro ao carregar dados do gráfico:", error);
       setData([]);
       setValorTotal(0);
-      Swal.fire("Erro", "Erro ao carregar dados do gráfico. Tente novamente.", "error");
+      Swal.fire(
+        "Erro",
+        "Erro ao carregar dados do gráfico. Tente novamente.",
+        "error"
+      );
     } finally {
       setCarregandoDados(false);
     }
@@ -218,7 +244,9 @@ export default function Motorista() {
   const handleEditarAluno = async (e) => {
     e.preventDefault();
     try {
-      const valorBolsa = formData.possuiBolsa ? parseFloat(formData.valorBolsa || 0) : null;
+      const valorBolsa = formData.possuiBolsa
+        ? parseFloat(formData.valorBolsa || 0)
+        : null;
 
       await UserService.atualizarAluno(alunoSelecionado.id, {
         nome: formData.nome,
@@ -248,7 +276,7 @@ export default function Motorista() {
             statusManual: "approved",
           }),
         });
-        await carregarAlunos()
+        await carregarAlunos();
       }
 
       Swal.fire("Atualizado!", "Aluno atualizado com sucesso.", "success");
@@ -308,7 +336,9 @@ export default function Motorista() {
     try {
       const senhaAleatoria = Math.random().toString(36).slice(-8);
       const valorMensalidade = parseFloat(formData.valorMensalidade || 0);
-      const valorBolsa = formData.possuiBolsa ? parseFloat(formData.valorBolsa || 0) : null;
+      const valorBolsa = formData.possuiBolsa
+        ? parseFloat(formData.valorBolsa || 0)
+        : null;
 
       const novoAluno = await UserService.registrarAluno(
         formData.nome,
@@ -324,7 +354,11 @@ export default function Motorista() {
       );
 
       await UserService.enviarSenhaPorEmail(formData.email, senhaAleatoria);
-      Swal.fire("Sucesso!", "Aluno cadastrado e senha enviada por email.", "success");
+      Swal.fire(
+        "Sucesso!",
+        "Aluno cadastrado e senha enviada por email.",
+        "success"
+      );
       setFormData({
         nome: "",
         email: "",
@@ -349,22 +383,26 @@ export default function Motorista() {
     try {
       const atual = parseFloat(novoValorMensalidade);
       if (atual <= 0) {
-        Swal.fire("Atenção", "O valor da mensalidade deve ser maior que zero.", "warning");
+        Swal.fire(
+          "Atenção",
+          "O valor da mensalidade deve ser maior que zero.",
+          "warning"
+        );
         return;
       }
-      
+
       await UserService.atualizarPerfilMotorista(motorista.id, {
         valorMensalidade: atual,
       });
-      
+
       setMotorista((prev) => ({
         ...prev,
         valorMensalidade: atual,
       }));
-      
+
       Swal.fire("Sucesso!", "Valor atualizado.", "success");
       setEditarMensalidade(false);
-      
+
       await fetch("/api/atualizarMensalidadeAlunos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -387,20 +425,23 @@ export default function Motorista() {
         return;
       }
 
-      const dadosAtualizados = await UserService.atualizarPerfilMotorista(motorista.id, {
-        diaVencimento: dia,
-      });
+      const dadosAtualizados = await UserService.atualizarPerfilMotorista(
+        motorista.id,
+        {
+          diaVencimento: dia,
+        }
+      );
 
-      setMotorista(prev => ({
+      setMotorista((prev) => ({
         ...prev,
-        diaVencimento: dia
+        diaVencimento: dia,
       }));
-      
+
       const usuarioAtual = UserService.getCurrentUser();
       if (usuarioAtual) {
         UserService.setCurrentUser({
           ...usuarioAtual,
-          diaVencimento: dia
+          diaVencimento: dia,
         });
       }
 
@@ -442,7 +483,7 @@ export default function Motorista() {
               <User size={16} />
               Meu Perfil
             </Button>
-
+            {/* Botao Adicionar Aluno */}
             <Dialog open={showModal} onOpenChange={setShowModal}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2 whitespace-nowrap">
@@ -454,21 +495,28 @@ export default function Motorista() {
                 <DialogHeader>
                   <DialogTitle>Cadastro de Aluno</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="grid gap-4 py-4 text-sm">
-                  {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
-                    <div key={campo} className="space-y-1">
-                      <label className="block font-semibold capitalize">{campo}</label>
-                      <input
-                        type={campo === "email" ? "email" : "text"}
-                        name={campo}
-                        value={formData[campo]}
-                        onChange={handleChange}
-                        placeholder={`Digite o ${campo}`}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        required
-                      />
-                    </div>
-                  ))}
+                <form
+                  onSubmit={handleSubmit}
+                  className="grid gap-4 py-4 text-sm"
+                >
+                  {["nome", "email", "telefone", "cpf", "faculdade"].map(
+                    (campo) => (
+                      <div key={campo} className="space-y-1">
+                        <label className="block font-semibold capitalize">
+                          {campo}
+                        </label>
+                        <input
+                          type={campo === "email" ? "email" : "text"}
+                          name={campo}
+                          value={formData[campo]}
+                          onChange={handleChange}
+                          placeholder={`Digite o ${campo}`}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          required
+                        />
+                      </div>
+                    )
+                  )}
 
                   <div className="flex items-center gap-2 mt-2">
                     <input
@@ -485,7 +533,9 @@ export default function Motorista() {
 
                   {formData.possuiBolsa && (
                     <div className="space-y-1">
-                      <label className="block font-semibold">Valor da Bolsa (R$)</label>
+                      <label className="block font-semibold">
+                        Valor da Bolsa (R$)
+                      </label>
                       <input
                         type="number"
                         name="valorBolsa"
@@ -538,27 +588,34 @@ export default function Motorista() {
                 </form>
               </DialogContent>
             </Dialog>
-
+            {/* Botao Editar Aluno */}
             <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
               <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Editar Aluno</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleEditarAluno} className="grid gap-4 py-4 text-sm">
-                  {["nome", "email", "telefone", "cpf", "faculdade"].map((campo) => (
-                    <div key={campo} className="space-y-1">
-                      <label className="block font-semibold capitalize">{campo}</label>
-                      <input
-                        type={campo === "email" ? "email" : "text"}
-                        name={campo}
-                        value={formData[campo]}
-                        onChange={handleChange}
-                        placeholder={`Digite o ${campo}`}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        required
-                      />
-                    </div>
-                  ))}
+                <form
+                  onSubmit={handleEditarAluno}
+                  className="grid gap-4 py-4 text-sm"
+                >
+                  {["nome", "email", "telefone", "cpf", "faculdade"].map(
+                    (campo) => (
+                      <div key={campo} className="space-y-1">
+                        <label className="block font-semibold capitalize">
+                          {campo}
+                        </label>
+                        <input
+                          type={campo === "email" ? "email" : "text"}
+                          name={campo}
+                          value={formData[campo]}
+                          onChange={handleChange}
+                          placeholder={`Digite o ${campo}`}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          required
+                        />
+                      </div>
+                    )
+                  )}
 
                   <div className="flex items-center gap-2 mt-2">
                     <input
@@ -586,7 +643,9 @@ export default function Motorista() {
                   </div>
                   {formData.possuiBolsa && (
                     <div className="space-y-1">
-                      <label className="block font-semibold">Valor da Bolsa (R$)</label>
+                      <label className="block font-semibold">
+                        Valor da Bolsa (R$)
+                      </label>
                       <input
                         type="number"
                         name="valorBolsa"
@@ -617,13 +676,19 @@ export default function Motorista() {
                 </form>
               </DialogContent>
             </Dialog>
-
-            <Dialog open={editarMensalidade} onOpenChange={setEditarMensalidade}>
+            {/* Botao Editar Mensalidade */}
+            <Dialog
+              open={editarMensalidade}
+              onOpenChange={setEditarMensalidade}
+            >
               <DialogContent className="sm:max-w-[400px]">
                 <DialogHeader>
                   <DialogTitle>Editar Valor da Mensalidade</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleAtualizarMensalidade} className="space-y-4">
+                <form
+                  onSubmit={handleAtualizarMensalidade}
+                  className="space-y-4"
+                >
                   <input
                     type="number"
                     value={novoValorMensalidade}
@@ -650,7 +715,9 @@ export default function Motorista() {
 
             <Button
               onClick={() => {
-                setNovoValorMensalidade(motorista?.valorMensalidade?.toFixed(2) || "0");
+                setNovoValorMensalidade(
+                  motorista?.valorMensalidade?.toFixed(2) || "0"
+                );
                 setEditarMensalidade(true);
               }}
               className="text-lg px-4 py-2 font-semibold"
@@ -659,13 +726,16 @@ export default function Motorista() {
             >
               💵 R$ {motorista?.valorMensalidade?.toFixed(2) || "0,00"}
             </Button>
-
+            {/* Botao Editar Vencimento */}
             <Dialog open={editarVencimento} onOpenChange={setEditarVencimento}>
               <DialogContent className="sm:max-w-[400px]">
                 <DialogHeader>
                   <DialogTitle>Editar Dia de Vencimento</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleAtualizarVencimento} className="space-y-4">
+                <form
+                  onSubmit={handleAtualizarVencimento}
+                  className="space-y-4"
+                >
                   <input
                     type="number"
                     min="1"
@@ -769,12 +839,24 @@ export default function Motorista() {
             onChange={handleAnoChange}
             className="border p-2 rounded w-full sm:w-auto"
           >
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((ano) => (
+            {Array.from(
+              { length: 5 },
+              (_, i) => new Date().getFullYear() - i
+            ).map((ano) => (
               <option key={ano} value={ano}>
                 {ano}
               </option>
             ))}
           </select>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => gerarRelatorioDashboardPDF(motorista, alunos, data)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            📄 Relatório Mensal
+          </Button>
+
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-10">
@@ -791,9 +873,12 @@ export default function Motorista() {
           ) : (
             <div className="w-full h-40 flex items-center justify-center text-center text-gray-500">
               <div>
-                <p className="text-lg font-medium mb-1">Nenhum dado disponível</p>
+                <p className="text-lg font-medium mb-1">
+                  Nenhum dado disponível
+                </p>
                 <p className="text-sm">
-                  Não há pagamentos registrados ou alunos ativos para o período selecionado.
+                  Não há pagamentos registrados ou alunos ativos para o período
+                  selecionado.
                 </p>
               </div>
             </div>
@@ -823,27 +908,44 @@ export default function Motorista() {
                 .filter((aluno) => {
                   if (filtroStatus === "todos") return true;
 
-                  const ultimoPix = aluno.pagamentos?.find((p) => p.tipo === "mensalidade");
-                  const ultimoAux = aluno.pagamentos?.find((p) => p.tipo === "auxilio");
+                  const ultimoPix = aluno.pagamentos?.find(
+                    (p) => p.tipo === "mensalidade"
+                  );
+                  const ultimoAux = aluno.pagamentos?.find(
+                    (p) => p.tipo === "auxilio"
+                  );
 
-                  const estaPago = [ultimoPix, ultimoAux].some((p) => p?.status === "approved");
+                  const estaPago = [ultimoPix, ultimoAux].some(
+                    (p) => p?.status === "approved"
+                  );
 
                   return filtroStatus === "pago" ? estaPago : !estaPago;
                 })
                 .map((aluno) => {
-                  const ultimoPix = aluno.pagamentos?.find((p) => p.tipo === "mensalidade");
-                  const ultimoAux = aluno.pagamentos?.find((p) => p.tipo === "auxilio");
+                  const ultimoPix = aluno.pagamentos?.find(
+                    (p) => p.tipo === "mensalidade"
+                  );
+                  const ultimoAux = aluno.pagamentos?.find(
+                    (p) => p.tipo === "auxilio"
+                  );
 
                   return (
                     <div
                       key={aluno.id}
-                      className="border p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                      className={`border p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4
+    ${
+      [
+        aluno.pagamentos?.find((p) => p.tipo === "mensalidade")?.status,
+        aluno.pagamentos?.find((p) => p.tipo === "auxilio")?.status,
+      ].includes("approved")
+        ? "bg-green-100"
+        : "bg-red-100"
+    }
+  `}
                     >
                       <div>
                         <p className="font-semibold">{aluno.nome}</p>
                         <p className="text-sm text-gray-500">{aluno.email}</p>
-
-                        
                       </div>
 
                       <div className="flex gap-2">
